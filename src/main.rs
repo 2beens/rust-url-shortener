@@ -1,33 +1,19 @@
-use std::net::{TcpStream, TcpListener};
-use std::io::{Read, Write};
+use std::net::{TcpListener};
 use std::thread;
 
-fn handle_read(mut stream: &TcpStream) {
-    let mut buf = [0u8 ;4096];
-    match stream.read(&mut buf) {
-        Ok(_) => {
-            let req_str = String::from_utf8_lossy(&buf);
-            println!("{}", req_str);
-        },
-        Err(e) => println!("Unable to read stream: {}", e),
-    }
-}
+use rust_url_shortener::router::Router;
 
-fn handle_write(mut stream: TcpStream) {
-    let response = b"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n<html><body>Hello world</body></html>\r\n";
-    match stream.write(response) {
-        Ok(_) => println!("Response sent"),
-        Err(e) => println!("Failed sending response: {}", e),
-    }
-}
-
-fn handle_client(stream: TcpStream) {
-    handle_read(&stream);
-    handle_write(stream);
-}
+// TODO:
+// create router, that would parse paths and route to related handler
+// create handlers for each route
+// create UrlInfo struct (short url, original url, id, etc.)
+// add Rest client
+// graceful shutdown
 
 fn main() {
     println!("starting url shortener ...");
+
+    // TODO: configurable via app args
     let host = "127.0.0.1";
     let port: u16 = 8080;
     let address = format!("{}:{}", host, port);
@@ -40,7 +26,9 @@ fn main() {
         match stream {
             Ok(stream) => {
                 thread::spawn(|| {
-                    handle_client(stream)
+                    // TODO: extract the router outside of the loop
+                    let router = Router::new(true);
+                    router.route(stream);
                 });
             }
             Err(e) => {
