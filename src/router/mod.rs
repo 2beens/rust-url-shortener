@@ -27,6 +27,12 @@ impl Router {
                     println!("{}", req_str);
                 }
 
+                let mut iter = req_str.split_whitespace();
+                let method = iter.next().unwrap();
+                let path = iter.next().unwrap();
+
+                println!("==> {}: {}", method, path);
+
                 Handlers::handle_hello_world(stream);
             },
             Err(e) => println!("Unable to read stream: {}", e),
