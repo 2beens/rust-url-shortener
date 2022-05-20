@@ -1,7 +1,6 @@
 use std::net::TcpListener;
 use std::thread;
-
-use rust_url_shortener::router::Router;
+use crate::router::Router;
 
 // TODO:
 // create router, that would parse paths and route to related handler
@@ -9,6 +8,9 @@ use rust_url_shortener::router::Router;
 // create UrlInfo struct (short url, original url, id, etc.)
 // add Rest client
 // graceful shutdown
+
+pub mod handlers;
+pub mod router;
 
 fn main() {
     println!("starting url shortener ...");
