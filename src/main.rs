@@ -29,7 +29,9 @@ fn main() {
                     // TODO: extract the router outside of the loop
                     // let router = Router::new(true);
                     // router.route(stream);
-                    Router::new(true).route(stream);
+                    Router::new(false, true).
+                        with_logs().
+                        route(stream);
                 });
             }
             Err(e) => {
