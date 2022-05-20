@@ -1,6 +1,6 @@
 use crate::router::Router;
-use std::net::TcpListener;
-use std::{env, process, thread};
+use crate::server::Server;
+use std::{env, process};
 
 // TODO:
 // create router, that would parse paths and route to related handler
@@ -11,6 +11,7 @@ use std::{env, process, thread};
 
 pub mod handlers;
 pub mod router;
+pub mod server;
 
 fn main() {
     println!("starting url shortener ...");
@@ -20,24 +21,8 @@ fn main() {
     let address = format!("{}:{}", host, port);
     println!("will be listening on: {}", address);
 
-    let listener = TcpListener::bind(address).unwrap();
-    println!("listening for connections ...");
-
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
-                thread::spawn(|| {
-                    // TODO: extract the router outside of the loop
-                    // let router = Router::new(true);
-                    // router.route(stream);
-                    Router::new(false, true).with_logs().route(stream);
-                });
-            }
-            Err(e) => {
-                println!("Unable to connect: {}", e);
-            }
-        }
-    }
+    let server = Server::new(address);
+    server.start();
 }
 
 fn get_host_and_port() -> (String, u16) {
@@ -51,19 +36,19 @@ fn get_host_and_port() -> (String, u16) {
                 eprintln!("invalid arguments [host], args len: {}", args.len());
                 process::exit(1);
             }
-            host = args[i+1].as_str();
+            host = args[i + 1].as_str();
         }
         if args[i] == "-port" || args[i] == "-p" {
             if i + 1 == args.len() {
                 eprintln!("invalid arguments [port], args len: {}", args.len());
                 process::exit(1);
             }
-            match args[i+1].parse::<u16>() {
-                Ok(n) => { port = n },
+            match args[i + 1].parse::<u16>() {
+                Ok(n) => port = n,
                 Err(e) => {
                     eprintln!("invalid port argument: {e}");
                     process::exit(1);
-                },
+                }
             }
         }
     }
