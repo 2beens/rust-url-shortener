@@ -1,6 +1,6 @@
+use crate::router::Router;
 use std::net::TcpListener;
 use std::thread;
-use crate::router::Router;
 
 // TODO:
 // create router, that would parse paths and route to related handler
@@ -31,9 +31,7 @@ fn main() {
                     // TODO: extract the router outside of the loop
                     // let router = Router::new(true);
                     // router.route(stream);
-                    Router::new(false, true).
-                        with_logs().
-                        route(stream);
+                    Router::new(false, true).with_logs().route(stream);
                 });
             }
             Err(e) => {

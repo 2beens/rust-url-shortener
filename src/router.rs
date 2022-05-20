@@ -27,7 +27,7 @@ impl Router {
 
     fn log(&self, message: String) {
         if self.suppress_logs {
-            return
+            return;
         }
         println!("{}", message);
     }
