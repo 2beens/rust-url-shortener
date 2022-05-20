@@ -4,11 +4,15 @@ use std::thread;
 
 pub struct Server {
     address: String,
+    router: Router,
 }
 
 impl Server {
     pub fn new(address: String) -> Server {
-        Server { address }
+        Server {
+            router: Router::new(false, true).with_logs(),
+            address,
+        }
     }
 
     pub fn start(&self) {
@@ -22,6 +26,9 @@ impl Server {
                         // TODO: extract the router outside of the loop
                         // let router = Router::new(true);
                         // router.route(stream);
+
+                        // self.router.route(stream);
+
                         Router::new(false, true).with_logs().route(stream);
                     });
                 }

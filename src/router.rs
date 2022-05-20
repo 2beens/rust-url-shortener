@@ -51,11 +51,25 @@ impl Router {
                 let path = iter.next().unwrap();
 
                 self.log(format!("==> serving [{}]: {}", method, path));
+
+                // get link and redirect to it
+                if path.starts_with("/l/") {
+                    Handlers::handle_link(stream);
+                    return;
+                }
+
                 match path {
                     "/ping" => Handlers::handle_ping(stream),
                     "/hi" => {
                         if method == "GET" {
                             Handlers::handle_hello_world(stream);
+                        } else {
+                            Handlers::handle_method_not_allowed(stream, method);
+                        }
+                    }
+                    "/new" => {
+                        if method == "POST" {
+                            Handlers::handle_new(stream);
                         } else {
                             Handlers::handle_method_not_allowed(stream, method);
                         }
