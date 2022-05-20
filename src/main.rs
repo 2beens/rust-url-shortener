@@ -1,4 +1,4 @@
-use std::net::{TcpListener};
+use std::net::TcpListener;
 use std::thread;
 
 use rust_url_shortener::router::Router;
@@ -27,8 +27,9 @@ fn main() {
             Ok(stream) => {
                 thread::spawn(|| {
                     // TODO: extract the router outside of the loop
-                    let router = Router::new(true);
-                    router.route(stream);
+                    // let router = Router::new(true);
+                    // router.route(stream);
+                    Router::new(true).route(stream);
                 });
             }
             Err(e) => {
