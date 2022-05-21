@@ -46,7 +46,7 @@ impl Router {
                     self.log(req_str.to_string());
                 }
 
-                let mut iter = req_str.split_whitespace();
+                let mut iter = req_str.split_whitespace().take(2);
                 let method = iter.next().unwrap();
                 let path = iter.next().unwrap();
 
