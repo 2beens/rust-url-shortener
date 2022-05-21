@@ -1,12 +1,5 @@
 use rust_url_shortener::server::Server;
-use std::{env, process};
-
-// TODO:
-// create router, that would parse paths and route to related handler
-// create handlers for each route
-// create UrlInfo struct (short url, original url, id, etc.)
-// add Rest client
-// graceful shutdown
+use std::{env, process, sync::Arc};
 
 fn main() {
     println!("starting url shortener ...");
@@ -16,7 +9,16 @@ fn main() {
     let address = format!("{}:{}", host, port);
     println!("will be listening on: {}", address);
 
-    let server = Server::new(address);
+    let server = Arc::new(Server::new(address, 5));
+    let server_thread = server.clone();
+
+    ctrlc::set_handler(move || {
+        println!("shutdown initiated ...");
+        server_thread.shutdown();
+        process::exit(0);
+    })
+    .expect("error setting ctrl-c handler");
+
     server.start();
 }
 

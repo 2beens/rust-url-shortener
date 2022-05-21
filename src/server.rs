@@ -1,18 +1,20 @@
 use crate::router::Router;
 use crate::ThreadPool;
-use std::net::{TcpListener, TcpStream};
-use std::thread;
+use std::net::{TcpListener};
+use std::sync::Arc;
 
 pub struct Server {
     address: String,
-    router: Router,
+    router: Arc<Router>,
+    max_concurrent_requests: usize,
 }
 
 impl Server {
-    pub fn new(address: String) -> Server {
+    pub fn new(address: String, max_concurrent_requests: usize) -> Server {
         Server {
-            router: Router::new(false, true).with_logs(),
+            router: Arc::new(Router::new(false, true).with_logs()),
             address,
+            max_concurrent_requests,
         }
     }
 
@@ -21,15 +23,15 @@ impl Server {
         println!("listening for connections ...");
 
         // control requests via Thread Pool
-        let pool = ThreadPool::new(5);
+        let pool = ThreadPool::new(self.max_concurrent_requests);
 
         for stream in listener.incoming() {
+            // TODO: check if this is right way to use the router in a closure below
+            let router_clone = self.router.clone();
             match stream {
                 Ok(stream) => {
-                    pool.execute(|| {
-                        // TODO: try to use the shared router
-                        // self.router.route(stream);
-                        Router::new(false, true).with_logs().route(stream);
+                    pool.execute(move || {
+                        router_clone.route(stream);
                     });
                 }
                 Err(e) => {
@@ -37,5 +39,10 @@ impl Server {
                 }
             }
         }
+    }
+
+    pub fn shutdown(&self) {
+        // should call drop(pool); here
+        println!("server shutdown not yet implemented :(")
     }
 }
