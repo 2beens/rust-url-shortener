@@ -8,5 +8,6 @@ authors = ["Srdjan Tubin <stubin87@gmail.com>"]
 
 [dependencies]
 ctrlc = "3.2.2"
-http = "0.2"
+http = "0.2.7"
 url = "2.2.2"
+rand = "0.8.5"
