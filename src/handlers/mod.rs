@@ -1,6 +1,7 @@
 use http::StatusCode;
 use std::io::Write;
 use std::net::TcpStream;
+use url::Url;
 
 pub struct Handlers {}
 
@@ -39,9 +40,24 @@ impl Handlers {
             url = String::from(found_url);
         }
 
-        println!("will be adding new url: {}", url)
+        println!("will be adding new url: {}", url);
 
-        // TODO: validate URL
+        match Url::parse(&url) {
+            Ok(parsed_url) => {
+                println!("new url is valid: {}", parsed_url.as_str());
+            }
+            Err(e) => {
+                println!("new url [{}] is NOT valid, err: {}", url, e);
+                Handlers::respond_with_status_code(
+                    stream,
+                    StatusCode::BAD_REQUEST.as_u16(),
+                    e.to_string(),
+                );
+                return;
+            }
+        }
+
+        println!("new valid url will be linked and stored");
 
         // read url from the body
         // check URL is OK
