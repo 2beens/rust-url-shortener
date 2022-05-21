@@ -1,6 +1,6 @@
 use crate::router::Router;
 use crate::ThreadPool;
-use std::net::{TcpListener};
+use std::net::TcpListener;
 use std::sync::Arc;
 
 pub struct Server {

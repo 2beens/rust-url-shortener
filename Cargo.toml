@@ -8,3 +8,4 @@ authors = ["Srdjan Tubin <stubin87@gmail.com>"]
 
 [dependencies]
 ctrlc = "3.2.2"
+http = "0.2"

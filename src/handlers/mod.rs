@@ -1,3 +1,4 @@
+use http::StatusCode;
 use std::io::Write;
 use std::net::TcpStream;
 
@@ -9,11 +10,53 @@ impl Handlers {
         // redirect to original URL
     }
 
-    pub fn handle_new(mut stream: TcpStream) {
+    pub fn handle_new(mut stream: TcpStream, post_body: String) {
+        println!("will add new url: {}", post_body);
+
+        let mut iter = post_body.split_terminator("=");
+        if let Some(url_param) = iter.next() {
+            if url_param != "url" {
+                let err_message = format!("unexpected parameter: {}", url_param);
+                Handlers::respond_with_status_code(
+                    stream,
+                    StatusCode::BAD_REQUEST.as_u16(),
+                    err_message,
+                );
+                return;
+            }
+        }
+
+        let mut url = String::from("");
+        if let Some(found_url) = iter.next() {
+            if found_url.len() == 0 {
+                Handlers::respond_with_status_code(
+                    stream,
+                    StatusCode::BAD_REQUEST.as_u16(),
+                    String::from("empty url parameter"),
+                );
+                return;
+            }
+            url = String::from(found_url);
+        }
+
+        println!("will be adding new url: {}", url)
+
+        // TODO: validate URL
+
         // read url from the body
         // check URL is OK
         // generate ID
         // store in redis
+    }
+
+    pub fn respond_with_status_code(mut stream: TcpStream, code: u16, message: String) {
+        let response = format!(
+            "HTTP/1.1 {code}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n{message}\r\n"
+        );
+        match stream.write(response.as_bytes()) {
+            Ok(_) => println!("response sent"),
+            Err(e) => println!("failed sending response: {}", e),
+        }
     }
 
     pub fn handle_hello_world(mut stream: TcpStream) {
