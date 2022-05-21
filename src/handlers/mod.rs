@@ -5,6 +5,9 @@ use std::io::Write;
 use std::net::TcpStream;
 use url::Url;
 
+extern crate redis;
+use redis::Commands;
+
 pub struct Handlers {}
 
 impl Handlers {
@@ -66,17 +69,24 @@ impl Handlers {
             .collect();
         println!("new valid url {} will be linked and stored", new_id);
 
-        // read url from the body
-        // check URL is OK
-        // generate ID
-        // store in redis
+        // TODO: extract the redis client in a field or somewhere else
+        let redis_client = redis::Client::open("redis://127.0.0.1/").unwrap();
+        let mut redis_conn = redis_client.get_connection().unwrap();
+
+        let url_key = format!("short_url::{}", new_id);
+        // throw away the result, just make sure it does not fail
+        let _: () = redis_conn.set(&url_key, url.as_str()).unwrap();
+
+        let message = format!("new url [{}] has been saved, path: /l/{}", url, new_id);
+        println!("{}", message);
+        Handlers::respond_with_status_code(stream, StatusCode::OK.as_u16(), message);
     }
 
     pub fn respond_with_status_code(mut stream: TcpStream, code: u16, message: String) {
         let response = format!(
             "HTTP/1.1 {code}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n{message}\r\n"
         );
-        match stream.write(response.as_bytes()) {
+        match stream.write_all(response.as_bytes()) {
             Ok(_) => println!("response sent"),
             Err(e) => println!("failed sending response: {}", e),
         }
