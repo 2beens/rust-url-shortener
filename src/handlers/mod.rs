@@ -11,9 +11,41 @@ use redis::Commands;
 pub struct Handlers {}
 
 impl Handlers {
-    pub fn handle_link(mut stream: TcpStream) {
-        // get original URL via link/ID from redis
-        // redirect to original URL
+    pub fn handle_link(mut stream: TcpStream, path: &str) {
+        let mut url_id = String::from("");
+        match path.strip_prefix("/l/") {
+            Some(url_id_from_path) => {
+                url_id = String::from(url_id_from_path);
+            },
+            None => {
+                Handlers::respond_with_status_code(
+                    stream,
+                    StatusCode::BAD_REQUEST.as_u16(),
+                    String::from("url id param missing"),
+                );
+                return;
+            },
+        }
+
+        // TODO: extract the redis client in a field or somewhere else
+        let redis_client = redis::Client::open("redis://127.0.0.1/").unwrap();
+        let mut redis_conn = redis_client.get_connection().unwrap();
+        let url_key = format!("short_url::{}", url_id);
+        match redis_conn.get::<String, String>(url_key) {
+            Ok(url) => {
+                println!(">>> found url to redirect to: {}", url);
+
+                // TODO: redirect
+
+            },
+            Err(e) => {
+                Handlers::respond_with_status_code(
+                    stream,
+                    StatusCode::BAD_REQUEST.as_u16(),
+                    String::from(format!("redis err: {}", e)),
+                );
+            },
+        }
     }
 
     pub fn handle_new(mut stream: TcpStream, post_body: String) {

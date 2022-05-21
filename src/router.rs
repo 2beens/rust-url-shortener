@@ -60,7 +60,12 @@ impl Router {
 
                 // get link and redirect to it
                 if path.starts_with("/l/") {
-                    Handlers::handle_link(stream);
+                    if method != "GET" {
+                        Handlers::handle_method_not_allowed(stream, method);
+                        return;
+                    }
+
+                    Handlers::handle_link(stream, path);
                     return;
                 }
 
