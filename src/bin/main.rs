@@ -1,5 +1,4 @@
-use crate::router::Router;
-use crate::server::Server;
+use rust_url_shortener::server::Server;
 use std::{env, process};
 
 // TODO:
@@ -8,10 +7,6 @@ use std::{env, process};
 // create UrlInfo struct (short url, original url, id, etc.)
 // add Rest client
 // graceful shutdown
-
-pub mod handlers;
-pub mod router;
-pub mod server;
 
 fn main() {
     println!("starting url shortener ...");

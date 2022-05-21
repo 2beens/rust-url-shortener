@@ -1,5 +1,5 @@
-use crate::Router;
-use std::net::TcpListener;
+use crate::router::Router;
+use std::net::{TcpListener, TcpStream};
 use std::thread;
 
 pub struct Server {
@@ -19,21 +19,19 @@ impl Server {
         let listener = TcpListener::bind(&self.address).unwrap();
         println!("listening for connections ...");
 
+        // TODO: control requests via Thread Pool
+
         for stream in listener.incoming() {
             match stream {
                 Ok(stream) => {
                     thread::spawn(|| {
-                        // TODO: extract the router outside of the loop
-                        // let router = Router::new(true);
-                        // router.route(stream);
-
+                        // TODO: try to use the shared router
                         // self.router.route(stream);
-
                         Router::new(false, true).with_logs().route(stream);
                     });
                 }
                 Err(e) => {
-                    println!("Unable to connect: {}", e);
+                    println!("unable to connect: {}", e);
                 }
             }
         }
