@@ -49,7 +49,7 @@ impl ThreadPool {
 impl Drop for ThreadPool {
     fn drop(&mut self) {
         println!("sending terminate message to all workers ...");
-        for worker in &self.workers {
+        for _ in &self.workers {
             self.sender.send(Message::Terminate).unwrap();
         }
 

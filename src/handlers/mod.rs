@@ -11,8 +11,8 @@ use redis::Commands;
 pub struct Handlers {}
 
 impl Handlers {
-    pub fn handle_link(mut stream: TcpStream, path: &str) {
-        let mut url_id = String::from("");
+    pub fn handle_link(stream: TcpStream, path: &str) {
+        let url_id;
         match path.strip_prefix("/l/") {
             Some(url_id_from_path) => {
                 url_id = String::from(url_id_from_path);
@@ -33,10 +33,8 @@ impl Handlers {
         let url_key = format!("short_url::{}", url_id);
         match redis_conn.get::<String, String>(url_key) {
             Ok(url) => {
-                println!(">>> found url to redirect to: {}", url);
-
-                // TODO: redirect
-
+                println!(">>> found url to redirect to: [{}]", url);
+                Handlers::handle_redirect(stream, url);
             },
             Err(e) => {
                 Handlers::respond_with_status_code(
@@ -48,7 +46,7 @@ impl Handlers {
         }
     }
 
-    pub fn handle_new(mut stream: TcpStream, post_body: String) {
+    pub fn handle_new(stream: TcpStream, post_body: String) {
         println!("will add new url: {}", post_body);
 
         let mut iter = post_body.split_terminator("=");
@@ -112,6 +110,27 @@ impl Handlers {
         let message = format!("new url [{}] has been saved, path: /l/{}", url, new_id);
         println!("{}", message);
         Handlers::respond_with_status_code(stream, StatusCode::OK.as_u16(), message);
+    }
+
+    pub fn handle_redirect(mut stream: TcpStream, url: String) {
+        let response = format!(
+r#"HTTP/1.1 301 Moved Permanently
+Location: {url}
+Content-Type: text/html
+
+<html>
+<head>
+    <title>Moved</title>
+</head>
+<body>
+    =Moved=
+    <p>This page has moved to <a href="{url}">{url}</a>.</p>
+</body>
+</html>"#);
+        match stream.write_all(response.as_bytes()) {
+            Ok(_) => println!("redirect response sent: {}", response),
+            Err(e) => println!("failed sending redirect response: {}", e),
+        }
     }
 
     pub fn respond_with_status_code(mut stream: TcpStream, code: u16, message: String) {
