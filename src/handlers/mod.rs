@@ -113,23 +113,34 @@ impl Handlers {
     }
 
     pub fn handle_redirect(mut stream: TcpStream, url: String) {
-        let response = format!(
-r#"HTTP/1.1 301 Moved Permanently
-Location: {url}
-Content-Type: text/html
-
-<html>
+        let content =
+r#"<html>
 <head>
     <title>Moved</title>
 </head>
 <body>
     =Moved=
-    <p>This page has moved to <a href="{url}">{url}</a>.</p>
+    <p>This page has moved.</p>
 </body>
-</html>"#);
+</html>
+"#;
+        let content_len = content.len();
+        let response = format!(
+r#"HTTP/1.1 301 Moved Permanently
+content-type: text/html; charset=UTF-8
+Content-Length: {content_len}
+Location: {url}
+Content-Type: text/html
+
+{content}"#);
+
         match stream.write_all(response.as_bytes()) {
             Ok(_) => println!("redirect response sent: {}", response),
             Err(e) => println!("failed sending redirect response: {}", e),
+        }
+        match stream.flush() {
+            Ok(_) => println!("response [redirect] flushed"),
+            Err(e) => println!("failed flushing response [redirect]: {}", e),
         }
     }
 
