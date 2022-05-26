@@ -30,10 +30,6 @@ jobs:
         run: |
           echo "build starting ..."
           cargo build --all --release
-          mkdir ../build
-          cp ./target/release/rust-url-shortener ../build
-          tar -cvf deploy.tar ../build/
-          chmod a+rwx deploy.tar
 
       - name: Deploy [copy the app via ssh password]
         uses: appleboy/scp-action@master
@@ -42,7 +38,6 @@ jobs:
           username: ${{ secrets.MISC_SERVER_SSH_USERNAME }}
           password: ${{ secrets.MISC_SERVER_SSH_PASSWORD }}
           port: ${{ secrets.MISC_SERVER_SSH_PORT }}
-          # source: "deploy.tar"
           source: "./target/release/rust-url-shortener"
           target: "/home/${{ secrets.MISC_SERVER_SSH_USERNAME }}/rust-url-shortener"
 
@@ -53,4 +48,4 @@ jobs:
           username: ${{ secrets.MISC_SERVER_SSH_USERNAME }}
           password: ${{ secrets.MISC_SERVER_SSH_PASSWORD }}
           port: ${{ secrets.MISC_SERVER_SSH_PORT }}
-          script: ~/rust-url-shortener/untar-and-restart.sh
+          script: ~/rust-url-shortener/post-deploy.sh
