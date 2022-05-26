@@ -30,20 +30,10 @@ jobs:
         run: |
           echo "build starting ..."
           cargo build --all --release
-          echo "build done"
-          echo "location: $(pwd)"
-          ls -l
-          ls -l ./target/release
           mkdir ../build
-          echo "build dir created, copying built app..."
           cp ./target/release/rust-url-shortener ../build
-          echo "app copied to ../build"
           tar -cvf deploy.tar ../build/
           chmod a+rwx deploy.tar
-          echo "build dir:"
-          ls -l ../build
-          echo "current dir:"
-          ls -l
 
       - name: Deploy [copy the app via ssh password]
         uses: appleboy/scp-action@master
@@ -52,5 +42,15 @@ jobs:
           username: ${{ secrets.MISC_SERVER_SSH_USERNAME }}
           password: ${{ secrets.MISC_SERVER_SSH_PASSWORD }}
           port: ${{ secrets.MISC_SERVER_SSH_PORT }}
-          source: "deploy.tar"
+          # source: "deploy.tar"
+          source: "./target/release/rust-url-shortener"
           target: "/home/${{ secrets.MISC_SERVER_SSH_USERNAME }}/rust-url-shortener"
+
+      - name: Untar deployed app and restart
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.MISC_SERVER_HOST }}
+          username: ${{ secrets.MISC_SERVER_SSH_USERNAME }}
+          password: ${{ secrets.MISC_SERVER_SSH_PASSWORD }}
+          port: ${{ secrets.MISC_SERVER_SSH_PORT }}
+          script: ~/rust-url-shortener/untar-and-restart.sh
