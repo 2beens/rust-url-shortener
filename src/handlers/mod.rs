@@ -155,7 +155,7 @@ Content-Type: text/html
     }
 
     pub fn handle_hello_world(mut stream: TcpStream) {
-        let response = b"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n<html><body>Hello world</body></html>\r\n";
+        let response = b"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n<html><body>Hello world budy!</body></html>\r\n";
         match stream.write(response) {
             Ok(_) => println!("response sent"),
             Err(e) => println!("failed sending response: {}", e),
