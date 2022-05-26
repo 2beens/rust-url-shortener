@@ -9,30 +9,48 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+  # build-and-test:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #   - name: Build
+  #     run: cargo build --verbose
+  #   - name: Run tests
+  #     run: cargo test --verbose
 
   deployment:
     runs-on: ubuntu-latest
-    needs: build-and-test
+    # needs: build-and-test
     environment: production
     steps:
       - name: checkout
         uses: actions/checkout@v3
+
       - name: Build
-        run: cargo build --all --verbose --release
-      - name: deplpoy [copy the app via ssh password]
+        run: |
+          echo "build starting ..."
+          cargo build --all --release
+          echo "build done"
+          echo "location: $(pwd)"
+          ls -l
+          ls -l ./target/release
+          mkdir ../build
+          echo "build dir created, copying built app..."
+          cp ./target/release/rust-url-shortener ../build
+          echo "app copied to ../build"
+          tar -cvf deploy.tar ../build/
+          chmod a+rwx deploy.tar
+          echo "build dir:"
+          ls -l ../build
+          echo "current dir:"
+          ls -l
+
+      - name: Deploy [copy the app via ssh password]
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.MISC_SERVER_HOST }}
           username: ${{ secrets.MISC_SERVER_SSH_USERNAME }}
           password: ${{ secrets.MISC_SERVER_SSH_PASSWORD }}
           port: ${{ secrets.MISC_SERVER_SSH_PORT }}
-          source: "target/release/rust-url-shortener"
-          target: "/home/serj/rust-url-shortener"
+          source: "deploy.tar"
+          target: "/home/${{ secrets.MISC_SERVER_SSH_USERNAME }}/rust-url-shortener"
