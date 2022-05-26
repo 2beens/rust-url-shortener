@@ -1,4 +1,4 @@
-name: Pull Request
+name: PR Build and Test
 
 on:
   pull_request:
@@ -9,52 +9,11 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # build-and-test:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - uses: actions/checkout@v3
-  #   - name: Build
-  #     run: cargo build --verbose
-  #   - name: Run tests
-  #     run: cargo test --verbose
-
-  deployment:
+  build-and-test:
     runs-on: ubuntu-latest
-    # needs: build-and-test
-    environment: production
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
-
-      - name: Build
-        run: |
-          echo "build starting ..."
-          cargo build --all --release
-
-      - name: Run pre-deploy script
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.MISC_SERVER_HOST }}
-          username: ${{ secrets.MISC_SERVER_SSH_USERNAME }}
-          password: ${{ secrets.MISC_SERVER_SSH_PASSWORD }}
-          port: ${{ secrets.MISC_SERVER_SSH_PORT }}
-          script: ~/rust-url-shortener/pre-deploy.sh
-
-      - name: Deploy [copy the app via ssh]
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.MISC_SERVER_HOST }}
-          username: ${{ secrets.MISC_SERVER_SSH_USERNAME }}
-          password: ${{ secrets.MISC_SERVER_SSH_PASSWORD }}
-          port: ${{ secrets.MISC_SERVER_SSH_PORT }}
-          source: "./target/release/rust-url-shortener"
-          target: "/home/${{ secrets.MISC_SERVER_SSH_USERNAME }}/rust-url-shortener"
-
-      - name: Run post-deploy script
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.MISC_SERVER_HOST }}
-          username: ${{ secrets.MISC_SERVER_SSH_USERNAME }}
-          password: ${{ secrets.MISC_SERVER_SSH_PASSWORD }}
-          port: ${{ secrets.MISC_SERVER_SSH_PORT }}
-          script: ~/rust-url-shortener/post-deploy.sh
+    - uses: actions/checkout@v3
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
