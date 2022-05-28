@@ -2,6 +2,7 @@ use redis::RedisError;
 
 use crate::handlers::Handlers;
 use crate::link_handler::LinkHandler;
+use crate::new_handler::NewHandler;
 use std::io::Read;
 use std::net::TcpStream;
 
@@ -11,6 +12,7 @@ pub struct Router {
 
     // handlers
     link_handler: LinkHandler,
+    new_handler: NewHandler,
 }
 
 impl Router {
@@ -19,11 +21,13 @@ impl Router {
         suppress_logs: bool,
         is_verbose: bool,
     ) -> Result<Router, RedisError> {
-        let link_handler = LinkHandler::new(redis_conn_string)?;
+        let link_handler = LinkHandler::new(&redis_conn_string)?;
+        let new_handler = NewHandler::new(&redis_conn_string)?;
         Ok(Router {
             suppress_logs,
             is_verbose,
             link_handler,
+            new_handler,
         })
     }
 
@@ -92,7 +96,7 @@ impl Router {
                     }
                     "/new" => {
                         if method == "POST" {
-                            Handlers::handle_new(stream, post_body);
+                            self.new_handler.handle_new(stream, post_body);
                         } else {
                             Handlers::handle_method_not_allowed(stream, method);
                         }
