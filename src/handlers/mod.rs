@@ -16,7 +16,7 @@ impl Handlers {
         match path.strip_prefix("/l/") {
             Some(url_id_from_path) => {
                 url_id = String::from(url_id_from_path);
-            },
+            }
             None => {
                 Handlers::respond_with_status_code(
                     stream,
@@ -24,7 +24,7 @@ impl Handlers {
                     String::from("url id param missing"),
                 );
                 return;
-            },
+            }
         }
 
         // TODO: extract the redis client in a field or somewhere else
@@ -35,14 +35,14 @@ impl Handlers {
             Ok(url) => {
                 println!(">>> found url to redirect to: [{}]", url);
                 Handlers::handle_redirect(stream, url);
-            },
+            }
             Err(e) => {
                 Handlers::respond_with_status_code(
                     stream,
                     StatusCode::BAD_REQUEST.as_u16(),
                     String::from(format!("redis err: {}", e)),
                 );
-            },
+            }
         }
     }
 

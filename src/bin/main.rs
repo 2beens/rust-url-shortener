@@ -4,6 +4,13 @@ use std::{env, process, sync::Arc};
 fn main() {
     println!("starting url shortener ...");
 
+    let redis_conn_string;
+    match env::var("SERJ_REDIS_PASS") {
+        Ok(val) => redis_conn_string = format!("redis://default:{}@127.0.0.1/", val),
+        Err(_e) => redis_conn_string = "redis://127.0.0.1/".to_string(),
+    }
+    println!(">> using redis conn string: {}", redis_conn_string);
+
     let (host, port) = get_host_and_port();
 
     let address = format!("{}:{}", host, port);
