@@ -1,5 +1,8 @@
 use rust_url_shortener::server::Server;
-use std::{env, process, sync::Arc};
+use std::{
+    env, process,
+    sync::{Arc, Mutex},
+};
 
 fn main() {
     println!("starting url shortener ...");
@@ -16,17 +19,19 @@ fn main() {
     let address = format!("{}:{}", host, port);
     println!("will be listening on: {}", address);
 
-    let server = Arc::new(Server::new(address, 5));
-    let server_thread = server.clone();
+    let server = Arc::new(Mutex::new(
+        Server::new(redis_conn_string, address, 5).unwrap(),
+    ));
+    // let server_clone = server.clone();
 
     ctrlc::set_handler(move || {
-        println!("shutdown initiated ...");
-        server_thread.shutdown();
+        println!("shutdown initiated ... TODO: not yet fully implemented");
+        // server_clone.lock().unwrap().shutdown();
         process::exit(0);
     })
     .expect("error setting ctrl-c handler");
 
-    server.start();
+    server.lock().unwrap().start();
 }
 
 fn get_host_and_port() -> (String, u16) {

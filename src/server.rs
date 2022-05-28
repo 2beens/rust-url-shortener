@@ -1,21 +1,30 @@
+use redis::RedisError;
+
 use crate::router::Router;
 use crate::ThreadPool;
 use std::net::TcpListener;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 pub struct Server {
     address: String,
-    router: Arc<Router>,
+    router: Arc<Mutex<Router>>,
     max_concurrent_requests: usize,
 }
 
 impl Server {
-    pub fn new(address: String, max_concurrent_requests: usize) -> Server {
-        Server {
-            router: Arc::new(Router::new(false, true).with_logs()),
+    pub fn new(
+        redis_conn_string: String,
+        address: String,
+        max_concurrent_requests: usize,
+    ) -> Result<Server, RedisError> {
+        let router = Router::new(redis_conn_string, false, true)?.with_logs();
+        let router = Arc::new(Mutex::new(router));
+
+        Ok(Server {
             address,
+            router,
             max_concurrent_requests,
-        }
+        })
     }
 
     pub fn start(&self) {
@@ -26,12 +35,12 @@ impl Server {
         let pool = ThreadPool::new(self.max_concurrent_requests);
 
         for stream in listener.incoming() {
-            // TODO: check if this is right way to use the router in a closure below
-            let router_clone = self.router.clone();
             match stream {
                 Ok(stream) => {
+                    let router_clone = Arc::clone(&(self.router));
                     pool.execute(move || {
-                        router_clone.route(stream);
+                        let mut r = router_clone.lock().unwrap();
+                        r.route(stream);
                     });
                 }
                 Err(e) => {

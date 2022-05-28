@@ -2,6 +2,7 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 
 pub mod handlers;
+pub mod link_handler;
 pub mod router;
 pub mod server;
 

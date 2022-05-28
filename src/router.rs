@@ -1,18 +1,30 @@
+use redis::RedisError;
+
 use crate::handlers::Handlers;
+use crate::link_handler::LinkHandler;
 use std::io::Read;
 use std::net::TcpStream;
 
 pub struct Router {
     suppress_logs: bool,
     is_verbose: bool,
+
+    // handlers
+    link_handler: LinkHandler,
 }
 
 impl Router {
-    pub fn new(suppress_logs: bool, is_verbose: bool) -> Router {
-        Router {
+    pub fn new(
+        redis_conn_string: String,
+        suppress_logs: bool,
+        is_verbose: bool,
+    ) -> Result<Router, RedisError> {
+        let link_handler = LinkHandler::new(redis_conn_string)?;
+        Ok(Router {
             suppress_logs,
             is_verbose,
-        }
+            link_handler,
+        })
     }
 
     pub fn with_no_logs(mut self) -> Router {
@@ -32,7 +44,7 @@ impl Router {
         println!("{}", message);
     }
 
-    pub fn route(&self, mut stream: TcpStream) {
+    pub fn route(&mut self, mut stream: TcpStream) {
         let mut buf = [0u8; 4096];
         match stream.read(&mut buf) {
             Ok(_) => {
@@ -65,7 +77,7 @@ impl Router {
                         return;
                     }
 
-                    Handlers::handle_link(stream, path);
+                    self.link_handler.handle_link(stream, path);
                     return;
                 }
 
