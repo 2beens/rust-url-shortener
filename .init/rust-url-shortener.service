@@ -6,9 +6,9 @@ Type=simple
 Restart=always
 RestartSec=10
 User=serj
-Environment="SERJ_REDIS_PASS=pass here"
-WorkingDirectory=/home/serj/rust-url-shortener
-ExecStart=/home/serj/rust-url-shortener/rust-url-shortener
+Environment="SERJ_REDIS_PASS=todo"
+WorkingDirectory=/home/url-shortener/rust-url-shortener
+ExecStart=/home/url-shortener/rust-url-shortener/target/release/rust-url-shortener -p 1990
 
 [Install]
 WantedBy=multi-user.target

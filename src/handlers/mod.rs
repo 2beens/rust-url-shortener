@@ -11,41 +11,6 @@ use redis::Commands;
 pub struct Handlers {}
 
 impl Handlers {
-    pub fn handle_link(stream: TcpStream, path: &str) {
-        let url_id;
-        match path.strip_prefix("/l/") {
-            Some(url_id_from_path) => {
-                url_id = String::from(url_id_from_path);
-            },
-            None => {
-                Handlers::respond_with_status_code(
-                    stream,
-                    StatusCode::BAD_REQUEST.as_u16(),
-                    String::from("url id param missing"),
-                );
-                return;
-            },
-        }
-
-        // TODO: extract the redis client in a field or somewhere else
-        let redis_client = redis::Client::open("redis://127.0.0.1/").unwrap();
-        let mut redis_conn = redis_client.get_connection().unwrap();
-        let url_key = format!("short_url::{}", url_id);
-        match redis_conn.get::<String, String>(url_key) {
-            Ok(url) => {
-                println!(">>> found url to redirect to: [{}]", url);
-                Handlers::handle_redirect(stream, url);
-            },
-            Err(e) => {
-                Handlers::respond_with_status_code(
-                    stream,
-                    StatusCode::BAD_REQUEST.as_u16(),
-                    String::from(format!("redis err: {}", e)),
-                );
-            },
-        }
-    }
-
     pub fn handle_new(stream: TcpStream, post_body: String) {
         println!("will add new url: {}", post_body);
 
@@ -113,8 +78,7 @@ impl Handlers {
     }
 
     pub fn handle_redirect(mut stream: TcpStream, url: String) {
-        let content =
-r#"<html>
+        let content = r#"<html>
 <head>
     <title>Moved</title>
 </head>
@@ -126,13 +90,14 @@ r#"<html>
 "#;
         let content_len = content.len();
         let response = format!(
-r#"HTTP/1.1 301 Moved Permanently
+            r#"HTTP/1.1 301 Moved Permanently
 content-type: text/html; charset=UTF-8
 Content-Length: {content_len}
 Location: {url}
 Content-Type: text/html
 
-{content}"#);
+{content}"#
+        );
 
         match stream.write_all(response.as_bytes()) {
             Ok(_) => println!("redirect response sent: {}", response),
