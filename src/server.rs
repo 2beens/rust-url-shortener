@@ -1,7 +1,7 @@
 use redis::RedisError;
 
 use crate::router::Router;
-use crate::ThreadPool;
+use crate::thread_pool::ThreadPool;
 use std::net::TcpListener;
 use std::sync::{Arc, Mutex};
 
