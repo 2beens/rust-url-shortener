@@ -10,8 +10,8 @@ pub struct LinkHandler {
 }
 
 impl LinkHandler {
-    pub fn new(redis_conn_string: String) -> Result<LinkHandler, RedisError> {
-        let redis_client = redis::Client::open(redis_conn_string)?;
+    pub fn new(redis_conn_string: &String) -> Result<LinkHandler, RedisError> {
+        let redis_client = redis::Client::open(String::from(redis_conn_string))?;
         let redis_conn = redis_client.get_connection()?;
         Ok(LinkHandler { redis_conn })
     }
