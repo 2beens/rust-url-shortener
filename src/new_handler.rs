@@ -19,7 +19,7 @@ impl NewHandler {
     }
 
     pub fn handle_new(&mut self, stream: TcpStream, post_body: String) {
-        println!("will add new url: {}", post_body);
+        println!("will add new url from post body: {}", post_body);
 
         let mut iter = post_body.split_terminator("=");
         if let Some(url_param) = iter.next() {

@@ -1,3 +1,4 @@
+use http::StatusCode;
 use redis::RedisError;
 
 use crate::get_all_handler::GetAllHandler;
@@ -70,12 +71,6 @@ impl Router {
                 let method = iter.next().unwrap();
                 let path = iter.next().unwrap();
 
-                let mut post_body = String::from("");
-                let mut iter = req_str.lines().rev().take(1);
-                if let Some(body) = iter.next() {
-                    post_body = String::from(body);
-                }
-
                 self.log(format!("==> serving [{}]: {}", method, path));
 
                 // get link and redirect to it
@@ -100,6 +95,19 @@ impl Router {
                     }
                     "/new" => {
                         if method == "POST" {
+                            let post_body;
+                            let mut iter = req_str.lines().rev().take(1);
+                            if let Some(body) = iter.next() {
+                                post_body = String::from(body.trim_matches(char::from(0)));
+                            } else {
+                                Handlers::respond_with_status_code(
+                                    stream,
+                                    StatusCode::BAD_REQUEST.as_u16(),
+                                    String::from("missing post body"),
+                                );
+                                return;
+                            }
+
                             self.new_handler.handle_new(stream, post_body);
                         } else {
                             Handlers::handle_method_not_allowed(stream, method);

@@ -31,7 +31,7 @@ impl GetAllHandler {
                     res_json.push(String::from(","))
                 }
                 Err(e) => {
-                    println!("error reading urk by key [{}]: {}", &url_key, e)
+                    println!("error reading URL by key [{}]: {}", &url_key, e)
                 }
             }
         }
@@ -42,6 +42,7 @@ impl GetAllHandler {
         }
 
         res_json.push(String::from("]"));
+
         Handlers::json_response(stream, StatusCode::OK.as_u16(), res_json.concat());
     }
 }

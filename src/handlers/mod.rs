@@ -26,7 +26,7 @@ Content-Type: text/html
 {content}"#
         );
 
-        match stream.write_all(response.as_bytes()) {
+        match stream.write(response.as_bytes()) {
             Ok(_) => println!("redirect response sent: {}", response),
             Err(e) => println!("failed sending redirect response: {}", e),
         }
@@ -50,7 +50,7 @@ Content-Type: text/html
         let response = format!(
             "HTTP/1.1 {code}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{data}\r\n"
         );
-        match stream.write_all(response.as_bytes()) {
+        match stream.write(response.as_bytes()) {
             Ok(_) => println!("response sent"),
             Err(e) => println!("failed sending response: {}", e),
         }
