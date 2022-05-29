@@ -1,11 +1,10 @@
-extern crate redis;
-use std::net::TcpStream;
-
 use http::StatusCode;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use redis::{Commands, Connection, RedisError};
+use std::net::TcpStream;
 use url::Url;
 
+extern crate redis;
 use crate::handlers::Handlers;
 
 pub struct NewHandler {
@@ -20,7 +19,7 @@ impl NewHandler {
     }
 
     pub fn handle_new(&mut self, stream: TcpStream, post_body: String) {
-        println!("will add new url: {}", post_body);
+        println!("will add new url from post body: {}", post_body);
 
         let mut iter = post_body.split_terminator("=");
         if let Some(url_param) = iter.next() {
@@ -73,8 +72,9 @@ impl NewHandler {
         println!("new valid url {} will be linked and stored", new_id);
 
         let url_key = format!("short_url::{}", new_id);
-        // throw away the result, just make sure it does not fail
+        // TODO: in case error happens, unwrap() will panic; fix that, check for errors
         let _: () = self.redis_conn.set(&url_key, url.as_str()).unwrap();
+        let _: () = self.redis_conn.sadd("short_urls", url_key).unwrap();
 
         let message = format!("new url [{}] has been saved, path: /l/{}", url, new_id);
         println!("{}", message);
