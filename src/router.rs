@@ -1,5 +1,6 @@
 use redis::RedisError;
 
+use crate::get_all_handler::GetAllHandler;
 use crate::handlers::Handlers;
 use crate::link_handler::LinkHandler;
 use crate::new_handler::NewHandler;
@@ -13,6 +14,7 @@ pub struct Router {
     // handlers
     link_handler: LinkHandler,
     new_handler: NewHandler,
+    get_all_handler: GetAllHandler,
 }
 
 impl Router {
@@ -23,11 +25,13 @@ impl Router {
     ) -> Result<Router, RedisError> {
         let link_handler = LinkHandler::new(&redis_conn_string)?;
         let new_handler = NewHandler::new(&redis_conn_string)?;
+        let get_all_handler = crate::get_all_handler::GetAllHandler::new(&redis_conn_string)?;
         Ok(Router {
             suppress_logs,
             is_verbose,
             link_handler,
             new_handler,
+            get_all_handler,
         })
     }
 
@@ -97,6 +101,13 @@ impl Router {
                     "/new" => {
                         if method == "POST" {
                             self.new_handler.handle_new(stream, post_body);
+                        } else {
+                            Handlers::handle_method_not_allowed(stream, method);
+                        }
+                    }
+                    "/all" => {
+                        if method == "GET" {
+                            self.get_all_handler.handle_get_all(stream);
                         } else {
                             Handlers::handle_method_not_allowed(stream, method);
                         }

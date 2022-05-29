@@ -46,6 +46,16 @@ Content-Type: text/html
         }
     }
 
+    pub fn json_response(mut stream: TcpStream, code: u16, data: String) {
+        let response = format!(
+            "HTTP/1.1 {code}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{data}\r\n"
+        );
+        match stream.write_all(response.as_bytes()) {
+            Ok(_) => println!("response sent"),
+            Err(e) => println!("failed sending response: {}", e),
+        }
+    }
+
     pub fn handle_hello_world(mut stream: TcpStream) {
         let response = b"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n<html><body>Hello world budy!</body></html>\r\n";
         match stream.write(response) {
