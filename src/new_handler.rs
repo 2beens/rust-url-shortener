@@ -3,6 +3,7 @@ use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use redis::{Commands, Connection, RedisError};
 use std::net::TcpStream;
 use url::Url;
+use urlencoding::decode;
 
 extern crate redis;
 use crate::handlers::Handlers;
@@ -47,7 +48,9 @@ impl NewHandler {
             url = String::from(found_url);
         }
 
-        println!("will be adding new url: {}", url);
+        println!("will be adding new url, raw: {}", url);
+        let url = decode(url.as_str()).expect("UTF-8");
+        println!("will be adding new url, decoded: {}", url);
 
         match Url::parse(&url) {
             Ok(parsed_url) => {
@@ -73,7 +76,7 @@ impl NewHandler {
 
         let url_key = format!("short_url::{}", new_id);
         // TODO: in case error happens, unwrap() will panic; fix that, check for errors
-        let _: () = self.redis_conn.set(&url_key, url.as_str()).unwrap();
+        let _: () = self.redis_conn.set(&url_key, String::from(url.clone())).unwrap();
         let _: () = self.redis_conn.sadd("short_urls", url_key).unwrap();
 
         let message = format!("new url [{}] has been saved, path: /l/{}", url, new_id);
