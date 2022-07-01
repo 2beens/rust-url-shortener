@@ -4,6 +4,9 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+// to run in windows, with redis running in docker, and port:
+// $env:SERJ_REDIS_PASS = 'todo'; .\rust-url-shortener.exe -p 9001
+
 fn main() {
     println!("starting url shortener ...");
 

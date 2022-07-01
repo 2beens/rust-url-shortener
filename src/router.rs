@@ -94,7 +94,10 @@ impl Router {
                         }
                     }
                     "/new" => {
-                        if method == "POST" {
+                        if method == "OPTIONS" {
+                            Handlers::respond_options_ok(stream, path);
+                            return;
+                        } else if method == "POST" {
                             let post_body;
                             let mut iter = req_str.lines().rev().take(1);
                             if let Some(body) = iter.next() {
