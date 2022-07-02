@@ -75,6 +75,7 @@ impl Worker {
                 Message::NewJob(job) => {
                     println!("worker {} got a new job, executing ...", id);
                     job();
+                    println!("worker {} job done", id);
                 }
                 Message::Terminate => {
                     println!("worker {} received termination message", id);

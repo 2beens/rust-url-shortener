@@ -60,11 +60,19 @@ impl Router {
                 let req_str = String::from_utf8_lossy(&buf);
                 if self.is_verbose {
                     self.log(String::from("+++++++++++++++++++++++++++++++++"));
-                    self.log(String::from("incoming request:"));
-                    self.log(req_str.to_string());
+                    self.log(
+                        String::from(format!("incoming request, len [{}]:", req_str.len()))
+                    );
+                    self.log(format!("[[{}]]", req_str.to_string()));
                     self.log(String::from("---------------------------------"));
                 } else {
                     self.log(req_str.to_string());
+                }
+
+                if req_str == "" {
+                    self.log(String::from("received an empty request"));
+                    Handlers::handle_unknown_path(stream);
+                    return;
                 }
 
                 let mut iter = req_str.split_whitespace().take(2);
