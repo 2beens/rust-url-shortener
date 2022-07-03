@@ -79,8 +79,7 @@ impl NewHandler {
         let _: () = self.redis_conn.set(&url_key, String::from(url.clone())).unwrap();
         let _: () = self.redis_conn.sadd("short_urls", url_key).unwrap();
 
-        let message = format!("new url [{}] has been saved, path: /l/{}", url, new_id);
-        println!("{}", message);
-        Handlers::respond_with_status_code(stream, StatusCode::OK.as_u16(), message);
+        println!("new url [{}] has been saved, path: /l/{}", url, new_id);
+        Handlers::respond_with_status_code(stream, StatusCode::OK.as_u16(), format!("{}", new_id));
     }
 }
