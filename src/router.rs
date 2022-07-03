@@ -5,6 +5,7 @@ use crate::get_all_handler::GetAllHandler;
 use crate::handlers::Handlers;
 use crate::link_handler::LinkHandler;
 use crate::new_handler::NewHandler;
+use crate::delete_handler::DeleteHandler;
 use std::io::Read;
 use std::net::TcpStream;
 
@@ -16,6 +17,7 @@ pub struct Router {
     link_handler: LinkHandler,
     new_handler: NewHandler,
     get_all_handler: GetAllHandler,
+    delete_handler: DeleteHandler,
 }
 
 impl Router {
@@ -26,6 +28,7 @@ impl Router {
     ) -> Result<Router, RedisError> {
         let link_handler = LinkHandler::new(&redis_conn_string)?;
         let new_handler = NewHandler::new(&redis_conn_string)?;
+        let delete_handler = DeleteHandler::new(&redis_conn_string)?;
         let get_all_handler = crate::get_all_handler::GetAllHandler::new(&redis_conn_string)?;
         Ok(Router {
             suppress_logs,
@@ -33,6 +36,7 @@ impl Router {
             link_handler,
             new_handler,
             get_all_handler,
+            delete_handler,
         })
     }
 
@@ -60,11 +64,19 @@ impl Router {
                 let req_str = String::from_utf8_lossy(&buf);
                 if self.is_verbose {
                     self.log(String::from("+++++++++++++++++++++++++++++++++"));
-                    self.log(String::from("incoming request:"));
-                    self.log(req_str.to_string());
+                    self.log(
+                        String::from(format!("incoming request, len [{}]:", req_str.len()))
+                    );
+                    self.log(format!("[[{}]]", req_str.to_string()));
                     self.log(String::from("---------------------------------"));
                 } else {
                     self.log(req_str.to_string());
+                }
+
+                if req_str == "" {
+                    self.log(String::from("received an empty request"));
+                    Handlers::handle_unknown_path(stream);
+                    return;
                 }
 
                 let mut iter = req_str.split_whitespace().take(2);
@@ -82,6 +94,17 @@ impl Router {
 
                     self.link_handler.handle_link(stream, path);
                     return;
+                } else if path.starts_with("/delete") {
+                    if method == "OPTIONS" {
+                        Handlers::respond_options_ok(stream, path, "DELETE");
+                        return;
+                    } else if method != "DELETE" {
+                        Handlers::handle_method_not_allowed(stream, method);
+                        return;
+                    }
+
+                    self.delete_handler.handle_delete(stream, path);
+                    return;
                 }
 
                 match path {
@@ -94,7 +117,10 @@ impl Router {
                         }
                     }
                     "/new" => {
-                        if method == "POST" {
+                        if method == "OPTIONS" {
+                            Handlers::respond_options_ok(stream, path, "POST");
+                            return;
+                        } else if method == "POST" {
                             let post_body;
                             let mut iter = req_str.lines().rev().take(1);
                             if let Some(body) = iter.next() {
@@ -103,7 +129,7 @@ impl Router {
                                 Handlers::respond_with_status_code(
                                     stream,
                                     StatusCode::BAD_REQUEST.as_u16(),
-                                    String::from("missing post body"),
+                                    String::from("missing request body"),
                                 );
                                 return;
                             }
