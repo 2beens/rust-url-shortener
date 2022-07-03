@@ -41,7 +41,7 @@ impl DeleteHandler {
 
         println!(">>> will be deleting url: {}", id);
         let url_key = format!("short_url::{}", id);
-        let del_res: i32 = self.redis_conn.del(url_key).expect("failed to delete url by key ");
+        let del_res: i32 = self.redis_conn.del(&url_key).expect("failed to delete url by key");
 
         let log_msg = format!("delete [{}] result: {}", id, del_res);
         println!(">>> {}", log_msg);
@@ -50,6 +50,11 @@ impl DeleteHandler {
             Handlers::respond_with_status_code(stream, StatusCode::NOT_FOUND.as_u16(), String::from(log_msg));
             return;
         }
+
+        // now remove the key from the short_urls set
+        let del_res: i32 = self.redis_conn.srem("short_urls", &url_key).
+            expect("failed to delete url key [{}] from the short_urls set");
+        println!("delete {} from short_urls set result: {}", url_key, del_res);
 
         Handlers::respond_with_status_code(stream, StatusCode::OK.as_u16(), String::from(log_msg));
     }
