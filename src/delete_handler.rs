@@ -43,8 +43,8 @@ impl DeleteHandler {
         let url_key = format!("short_url::{}", id);
         let del_res: i32 = self.redis_conn.del(url_key).expect("failed to delete url by key ");
 
-        let log_msg = format!(">>> delete [{}] result: {}", id, del_res);
-        println!("{}", log_msg);
+        let log_msg = format!("delete [{}] result: {}", id, del_res);
+        println!(">>> {}", log_msg);
 
         if del_res == 0 {
             Handlers::respond_with_status_code(stream, StatusCode::NOT_FOUND.as_u16(), String::from(log_msg));

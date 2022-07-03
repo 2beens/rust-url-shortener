@@ -46,8 +46,10 @@ Content-Type: text/html
         }
     }
 
-    pub fn respond_options_ok(mut stream: TcpStream, path: &str) {
-        let response = String::from("HTTP/1.1 204 No Content\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: POST\r\nAccess-Control-Allow-Headers: *\r\n");
+    pub fn respond_options_ok(mut stream: TcpStream, path: &str, allowed_method: &str) {
+        let response = String::from(
+            format!("HTTP/1.1 204 No Content\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: {}\r\nAccess-Control-Allow-Headers: *\r\n", allowed_method)
+        );
         match stream.write_all(response.as_bytes()) {
             Ok(_) => println!("OPTIONS response sent for path: {}", path),
             Err(e) => println!("failed sending OPTIONS response: {}", e),

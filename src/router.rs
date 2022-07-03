@@ -95,7 +95,10 @@ impl Router {
                     self.link_handler.handle_link(stream, path);
                     return;
                 } else if path.starts_with("/delete") {
-                    if method != "DELETE" {
+                    if method == "OPTIONS" {
+                        Handlers::respond_options_ok(stream, path, "DELETE");
+                        return;
+                    } else if method != "DELETE" {
                         Handlers::handle_method_not_allowed(stream, method);
                         return;
                     }
@@ -115,7 +118,7 @@ impl Router {
                     }
                     "/new" => {
                         if method == "OPTIONS" {
-                            Handlers::respond_options_ok(stream, path);
+                            Handlers::respond_options_ok(stream, path, "POST");
                             return;
                         } else if method == "POST" {
                             let post_body;
