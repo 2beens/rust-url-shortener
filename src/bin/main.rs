@@ -3,6 +3,11 @@ use std::{
     env, process,
     sync::{Arc, Mutex},
 };
+use log::{LevelFilter, trace, info, warn};
+use log4rs::append::console::ConsoleAppender;
+use log4rs::append::file::FileAppender;
+use log4rs::encode::pattern::PatternEncoder;
+use log4rs::config::{Appender, Config, Root};
 
 // to run in windows, with redis running in docker, and port:
 // $env:SERJ_REDIS_PASS = 'todo'; .\rust-url-shortener.exe -p 9001
@@ -10,17 +15,20 @@ use std::{
 fn main() {
     println!("starting url shortener ...");
 
+    setup_logger();
+    info!("logger setup completed...");
+
     let redis_conn_string;
     match env::var("SERJ_REDIS_PASS") {
         Ok(val) => redis_conn_string = format!("redis://default:{}@127.0.0.1/", val),
         Err(_e) => redis_conn_string = "redis://127.0.0.1/".to_string(),
     }
-    println!(">> using redis conn string: {}", redis_conn_string);
+    trace!(">> using redis conn string: {}", redis_conn_string);
 
     let (host, port) = get_host_and_port();
 
     let address = format!("{}:{}", host, port);
-    println!("will be listening on: {}", address);
+    info!("will be listening on: {}", address);
 
     let server = Arc::new(Mutex::new(
         Server::new(redis_conn_string, address, 5).unwrap(),
@@ -28,13 +36,33 @@ fn main() {
     // let server_clone = server.clone();
 
     ctrlc::set_handler(move || {
-        println!("shutdown initiated ... TODO: not yet fully implemented");
+        warn!("shutdown initiated ... TODO: not yet fully implemented");
         // server_clone.lock().unwrap().shutdown();
         process::exit(0);
     })
     .expect("error setting ctrl-c handler");
 
     server.lock().unwrap().start();
+}
+
+fn setup_logger() {
+    let stdout = ConsoleAppender::builder().build();
+    let logfile = FileAppender::builder()
+        .encoder(Box::new(PatternEncoder::new("{d} [{l}]:\t{m}\n")))
+        .build("log/output.log").unwrap();
+
+    let config = Config::builder()
+        .appender(Appender::builder().build("stdout", Box::new(stdout)))
+        .appender(Appender::builder().build("logfile", Box::new(logfile)))
+        .build(Root::builder()
+            .appender("logfile")
+            .appender("stdout")
+            .build(LevelFilter::Trace))
+        .unwrap();
+
+    log4rs::init_config(config).unwrap();
+
+    log::info!("Hello, world!");
 }
 
 fn get_host_and_port() -> (String, u16) {
