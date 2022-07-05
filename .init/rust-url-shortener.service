@@ -7,6 +7,7 @@ Restart=always
 RestartSec=10
 User=serj
 Environment="SERJ_REDIS_PASS=todo"
+Environment="LOG_FILE_PATH=todo"
 WorkingDirectory=/home/url-shortener/rust-url-shortener
 ExecStart=/home/url-shortener/rust-url-shortener/target/release/rust-url-shortener -p 1990
 
