@@ -1,6 +1,7 @@
 use crate::handlers::Handlers;
 use http::StatusCode;
 use std::net::TcpStream;
+use log::debug;
 
 extern crate redis;
 use redis::{Commands, Connection, RedisError};
@@ -35,7 +36,7 @@ impl LinkHandler {
         let url_key = format!("short_url::{}", url_id);
         match self.redis_conn.get::<String, String>(url_key) {
             Ok(url) => {
-                println!(">>> found url to redirect to: [{}]", url);
+                debug!(">>> found url to redirect to: [{}]", url);
                 Handlers::handle_redirect(stream, url);
             }
             Err(e) => {

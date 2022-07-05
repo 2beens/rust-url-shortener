@@ -8,6 +8,7 @@ use crate::new_handler::NewHandler;
 use crate::delete_handler::DeleteHandler;
 use std::io::Read;
 use std::net::TcpStream;
+use log::{debug, error};
 
 pub struct Router {
     suppress_logs: bool,
@@ -54,7 +55,7 @@ impl Router {
         if self.suppress_logs {
             return;
         }
-        println!("{}", message);
+        debug!("{}", message);
     }
 
     pub fn route(&mut self, mut stream: TcpStream) {
@@ -149,7 +150,7 @@ impl Router {
                     _ => Handlers::handle_unknown_path(stream),
                 }
             }
-            Err(e) => println!("Unable to read stream: {}", e),
+            Err(e) => error!("Unable to read stream: {}", e),
         }
     }
 }
