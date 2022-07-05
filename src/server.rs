@@ -1,5 +1,5 @@
 use redis::RedisError;
-
+use log::{debug, warn};
 use crate::router::Router;
 use crate::thread_pool::ThreadPool;
 use std::net::TcpListener;
@@ -29,7 +29,7 @@ impl Server {
 
     pub fn start(&self) {
         let listener = TcpListener::bind(&self.address).unwrap();
-        println!("listening for connections ...");
+        debug!("listening for connections ...");
 
         // control requests via Thread Pool
         let pool = ThreadPool::new(self.max_concurrent_requests);
@@ -44,7 +44,7 @@ impl Server {
                     });
                 }
                 Err(e) => {
-                    println!("unable to connect: {}", e);
+                    warn!("unable to connect: {}", e);
                 }
             }
         }
@@ -52,6 +52,6 @@ impl Server {
 
     pub fn shutdown(&self) {
         // should call drop(pool); here
-        println!("server shutdown not yet implemented :(")
+        debug!("server shutdown not yet implemented :(")
     }
 }

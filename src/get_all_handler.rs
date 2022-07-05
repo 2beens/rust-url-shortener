@@ -1,6 +1,7 @@
 use http::StatusCode;
 use redis::{Commands, Connection, RedisError};
 use std::{collections::HashSet, net::TcpStream};
+use log::debug;
 
 extern crate redis;
 
@@ -18,7 +19,7 @@ impl GetAllHandler {
     }
 
     pub fn handle_get_all(&mut self, stream: TcpStream) {
-        println!("trying to find and return all links ...");
+        debug!("trying to find and return all links ...");
 
         let mut res_json: Vec<String> = vec![String::from("[")];
 
@@ -31,7 +32,7 @@ impl GetAllHandler {
                     res_json.push(String::from(","))
                 }
                 Err(e) => {
-                    println!("error reading URL by key [{}]: {}", &url_key, e)
+                    debug!("error reading URL by key [{}]: {}", &url_key, e)
                 }
             }
         }

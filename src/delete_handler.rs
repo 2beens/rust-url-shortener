@@ -1,6 +1,7 @@
 use http::StatusCode;
 use redis::{Commands, Connection, RedisError};
 use std::net::TcpStream;
+use log::debug;
 
 extern crate redis;
 use crate::handlers::Handlers;
@@ -17,7 +18,7 @@ impl DeleteHandler {
     }
 
     pub fn handle_delete(&mut self, stream: TcpStream, path: &str) {
-        println!("will delete url: {}", path);
+        debug!("will delete url: {}", path);
 
         let path_parts =  path.split("?");
         let path_parts_vec = path_parts.collect::<Vec<&str>>();
@@ -39,12 +40,12 @@ impl DeleteHandler {
             return
         }
 
-        println!(">>> will be deleting url: {}", id);
+        debug!(">>> will be deleting url: {}", id);
         let url_key = format!("short_url::{}", id);
         let del_res: i32 = self.redis_conn.del(&url_key).expect("failed to delete url by key");
 
         let log_msg = format!("delete [{}] result: {}", id, del_res);
-        println!(">>> {}", log_msg);
+        debug!(">>> {}", log_msg);
 
         if del_res == 0 {
             Handlers::respond_with_status_code(stream, StatusCode::NOT_FOUND.as_u16(), String::from(log_msg));
@@ -54,7 +55,7 @@ impl DeleteHandler {
         // now remove the key from the short_urls set
         let del_res: i32 = self.redis_conn.srem("short_urls", &url_key).
             expect("failed to delete url key [{}] from the short_urls set");
-        println!("delete {} from short_urls set result: {}", url_key, del_res);
+        debug!("delete {} from short_urls set result: {}", url_key, del_res);
 
         Handlers::respond_with_status_code(stream, StatusCode::OK.as_u16(), String::from(log_msg));
     }

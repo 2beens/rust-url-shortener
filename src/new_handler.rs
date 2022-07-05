@@ -2,6 +2,7 @@ use http::StatusCode;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use redis::{Commands, Connection, RedisError};
 use std::net::TcpStream;
+use log::{debug, info};
 use url::Url;
 use urlencoding::decode;
 
@@ -20,7 +21,7 @@ impl NewHandler {
     }
 
     pub fn handle_new(&mut self, stream: TcpStream, post_body: String) {
-        println!("will add new url from post body: {}", post_body);
+        debug!("will add new url from post body: {}", post_body);
 
         let mut iter = post_body.split_terminator("=");
         if let Some(url_param) = iter.next() {
@@ -48,16 +49,16 @@ impl NewHandler {
             url = String::from(found_url);
         }
 
-        println!("will be adding new url, raw: {}", url);
+        info!("will be adding new url, raw: {}", url);
         let url = decode(url.as_str()).expect("UTF-8");
-        println!("will be adding new url, decoded: {}", url);
+        info!("will be adding new url, decoded: {}", url);
 
         match Url::parse(&url) {
             Ok(parsed_url) => {
-                println!("new url is valid: {}", parsed_url.as_str());
+                debug!("new url is valid: {}", parsed_url.as_str());
             }
             Err(e) => {
-                println!("new url [{}] is NOT valid, err: {}", url, e);
+                debug!("new url [{}] is NOT valid, err: {}", url, e);
                 Handlers::respond_with_status_code(
                     stream,
                     StatusCode::BAD_REQUEST.as_u16(),
@@ -72,14 +73,14 @@ impl NewHandler {
             .take(10)
             .map(char::from)
             .collect();
-        println!("new valid url {} will be linked and stored", new_id);
+        info!("new valid url {} will be linked and stored", new_id);
 
         let url_key = format!("short_url::{}", new_id);
         // TODO: in case error happens, unwrap() will panic; fix that, check for errors
         let _: () = self.redis_conn.set(&url_key, String::from(url.clone())).unwrap();
         let _: () = self.redis_conn.sadd("short_urls", url_key).unwrap();
 
-        println!("new url [{}] has been saved, path: /l/{}", url, new_id);
+        debug!("new url [{}] has been saved, path: /l/{}", url, new_id);
         Handlers::respond_with_status_code(stream, StatusCode::OK.as_u16(), format!("{}", new_id));
     }
 }

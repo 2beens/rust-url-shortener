@@ -1,5 +1,6 @@
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
+use log::debug;
 
 pub struct ThreadPool {
     workers: Vec<Worker>,
@@ -44,7 +45,7 @@ impl ThreadPool {
 
 impl Drop for ThreadPool {
     fn drop(&mut self) {
-        println!("sending terminate message to all workers ...");
+        debug!("sending terminate message to all workers ...");
         for _ in &self.workers {
             self.sender.send(Message::Terminate).unwrap();
         }
@@ -53,7 +54,7 @@ impl Drop for ThreadPool {
         // their current jobs, and break; from their loops
 
         for worker in &mut self.workers {
-            println!("shutting down worker {}", worker.id);
+            debug!("shutting down worker {}", worker.id);
 
             if let Some(thread) = worker.thread.take() {
                 thread.join().unwrap();
@@ -73,12 +74,12 @@ impl Worker {
             let message = receiver.lock().unwrap().recv().unwrap();
             match message {
                 Message::NewJob(job) => {
-                    println!("worker {} got a new job, executing ...", id);
+                    debug!("worker {} got a new job, executing ...", id);
                     job();
-                    println!("worker {} job done", id);
+                    debug!("worker {} job done", id);
                 }
                 Message::Terminate => {
-                    println!("worker {} received termination message", id);
+                    debug!("worker {} received termination message", id);
                     break;
                 }
             }
