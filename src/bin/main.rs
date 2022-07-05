@@ -16,7 +16,6 @@ fn main() {
     println!("starting url shortener ...");
 
     setup_logger();
-    info!("logger setup completed...");
 
     let redis_conn_string;
     match env::var("SERJ_REDIS_PASS") {
@@ -69,7 +68,7 @@ fn setup_logger() {
 
     log4rs::init_config(config).unwrap();
 
-    log::info!("Hello, world!");
+    info!("logger setup completed...");
 }
 
 fn get_host_and_port() -> (String, u16) {

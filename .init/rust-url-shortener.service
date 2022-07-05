@@ -5,7 +5,7 @@ Description=URL Shortener written in Rust, for personal serj-tubin.com site/serv
 Type=simple
 Restart=always
 RestartSec=10
-User=serj
+User=url-shortener
 Environment="SERJ_REDIS_PASS=todo"
 Environment="LOG_FILE_PATH=todo"
 WorkingDirectory=/home/url-shortener/rust-url-shortener
