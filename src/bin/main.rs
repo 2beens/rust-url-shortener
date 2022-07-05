@@ -46,10 +46,17 @@ fn main() {
 }
 
 fn setup_logger() {
+    let log_file_path;
+    match env::var("LOG_FILE_PATH") {
+        Ok(val) => log_file_path = val,
+        Err(_e) => log_file_path = "log/output.log".to_string(),
+    }
+    println!(">>> using log path: {}", log_file_path);
+
     let stdout = ConsoleAppender::builder().build();
     let logfile = FileAppender::builder()
         .encoder(Box::new(PatternEncoder::new("{d} [{l}]:\t{m}\n")))
-        .build("log/output.log").unwrap();
+        .build(log_file_path).unwrap();
 
     let config = Config::builder()
         .appender(Appender::builder().build("stdout", Box::new(stdout)))
