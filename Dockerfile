@@ -8,4 +8,5 @@ RUN cargo install --path .
 
 # set the startup command to run your binary
 # CMD ["/bin/ls", "-l"]
-CMD ["./target/release/rust-url-shortener"]
+# TODO: add ability to inject redis host in Dockerfile (from docker-compose.yml)
+CMD ["./target/release/rust-url-shortener", "-p", "9001", "-redishost", "st-redis"]
