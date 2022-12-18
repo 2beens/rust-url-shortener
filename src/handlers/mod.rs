@@ -45,6 +45,10 @@ Content-Type: text/html
             Ok(_) => debug!("response sent"),
             Err(e) => error!("failed sending response: {}", e),
         }
+        match stream.flush() {
+            Ok(_) => debug!("response flushed"),
+            Err(e) => error!("failed flushing json response: {}", e),
+        }
     }
 
     pub fn respond_options_ok(mut stream: TcpStream, path: &str, allowed_method: &str) {
@@ -77,9 +81,13 @@ Content-Type: text/html
 
     pub fn handle_hello_world(mut stream: TcpStream) {
         let response = b"HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n<html><body>Hello world budy!</body></html>\r\n";
-        match stream.write(response) {
+        match stream.write_all(response) {
             Ok(_) => debug!("response sent"),
             Err(e) => error!("failed sending response: {}", e),
+        }
+        match stream.flush() {
+            Ok(_) => debug!("response flushed"),
+            Err(e) => error!("failed flushing json response: {}", e),
         }
     }
 
@@ -99,18 +107,26 @@ Content-Type: text/html
     pub fn handle_unknown_path(mut stream: TcpStream) {
         let response =
             b"HTTP/1.1 404\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: text/html; charset=UTF-8\r\n\r\nNot Found :(\r\n";
-        match stream.write(response) {
+        match stream.write_all(response) {
             Ok(_) => debug!("response [unknown path] sent"),
             Err(e) => error!("failed sending response [unknown path]: {}", e),
+        }
+        match stream.flush() {
+            Ok(_) => debug!("response flushed"),
+            Err(e) => error!("failed flushing json response: {}", e),
         }
     }
 
     pub fn handle_method_not_allowed(mut stream: TcpStream, method: &str) {
         let message = format!("HTTP/1.1 405\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: text/html; charset=UTF-8\r\n\r\nMethod {} not allowed\r\n", method);
         let response = message.as_bytes();
-        match stream.write(response) {
+        match stream.write_all(response) {
             Ok(_) => debug!("response [unknown path] sent"),
             Err(e) => error!("failed sending response [unknown path]: {}", e),
+        }
+        match stream.flush() {
+            Ok(_) => debug!("response flushed"),
+            Err(e) => error!("failed flushing json response: {}", e),
         }
     }
 }
