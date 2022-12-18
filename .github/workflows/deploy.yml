@@ -9,7 +9,7 @@ env:
 
 jobs:
   deployment:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     environment: production
     steps:
       - name: checkout
