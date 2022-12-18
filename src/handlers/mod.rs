@@ -51,9 +51,13 @@ Content-Type: text/html
         let response = String::from(
             format!("HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: {},OPTIONS\r\nAccess-Control-Allow-Headers: *\r\n\r\n<html><body>OK</body></html>\r\n", allowed_method)
         );
-        match stream.write(response.as_bytes()) {
+        match stream.write_all(response.as_bytes()) {
             Ok(_) => debug!("OPTIONS response sent for path: {}", path),
             Err(e) => error!("failed sending OPTIONS response: {}", e),
+        }
+        match stream.flush() {
+            Ok(_) => debug!("OPTIONS response flushed"),
+            Err(e) => error!("failed flushing OPTIONS response: {}", e),
         }
     }
 
@@ -61,9 +65,13 @@ Content-Type: text/html
         let response = format!(
             "HTTP/1.1 {code}\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{data}\r\n"
         );
-        match stream.write(response.as_bytes()) {
-            Ok(_) => debug!("response sent"),
-            Err(e) => error!("failed sending response: {}", e),
+        match stream.write_all(response.as_bytes()) {
+            Ok(_) => debug!("json response sent"),
+            Err(e) => error!("failed sending json response: {}", e),
+        }
+        match stream.flush() {
+            Ok(_) => debug!("response flushed"),
+            Err(e) => error!("failed flushing json response: {}", e),
         }
     }
 
