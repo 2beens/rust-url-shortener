@@ -51,7 +51,7 @@ Content-Type: text/html
         let response = String::from(
             format!("HTTP/1.1 204 No Content\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: {}\r\nAccess-Control-Allow-Headers: *\r\n", allowed_method)
         );
-        match stream.write_all(response.as_bytes()) {
+        match stream.write(response.as_bytes()) {
             Ok(_) => debug!("OPTIONS response sent for path: {}", path),
             Err(e) => error!("failed sending OPTIONS response: {}", e),
         }
