@@ -1,5 +1,9 @@
+<div align="center">
+
 # 🦀 Rust 🦀 URL Shortener 🕸
 Learning and practicing the lovely Rust 🦀 through making a URL Shortener service that I use.
+
+</div>
 
 Disclaimer: I deliberatelly don't use any frameworks or such "helpers" whith convenient functions, templates, macros, etc. The reason is to first try to learn pure Rust as much as possible, then at later points, I can use frameworks like [actix-web](https://crates.io/crates/actix-web), [Tokio for async runtime](https://tokio.rs/), etc.
 
