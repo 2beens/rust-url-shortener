@@ -201,35 +201,8 @@ fn get_req_header(header: &str, req_str: &str) -> String {
     return "".to_string();
 }
 
-fn get_req_cookie(cookie_id: &str, req_str: &str) -> String {
-    for line in req_str.lines() {
-        let mut next_line = line.trim_start();
-        next_line = next_line.trim_end();
-
-        if !next_line.starts_with("Cookie:") {
-            continue;
-        }
-
-        let cookies_line = next_line.strip_prefix("Cookie:").unwrap().trim_start();
-        let cookies_pairs: Vec<&str> = cookies_line.split_terminator(";").collect();
-        for cpart in cookies_pairs {
-            let cparts: Vec<&str> = cpart.split_terminator("=").collect();
-            if cparts.len() != 2 {
-                continue;
-            }
-            if cparts[0].trim_start() != cookie_id {
-                continue;
-            }
-            return cparts[1].to_string();
-        }
-    }
-
-    return "".to_string();
-}
-
 #[cfg(test)]
 mod tests {
-    use super::get_req_cookie;
     use crate::router::get_req_header;
 
     #[test]
@@ -248,49 +221,5 @@ mod tests {
         "#;
         let got_cookie = get_req_header("X-SERJ-TOKEN", example_req);
         assert_eq!(got_cookie, "blabla");
-    }
-
-    #[test]
-    fn test_get_req_cookies() {
-        let example_req = r#"
-            POST /new HTTP/1.1
-            Host: localhost:8080
-            User-Agent: curl/7.83.1
-            Accept: */*
-            Cookie: _ga=GA1.2.2262110364.256621258; _gid=GS1.2.2223652422.16714775; sessionkolacic=123123123; sasdgasdK=24.1.1671483406.0.0.0;
-            Content-Length: 20
-            Content-Type: application/x-www-form-urlencoded
-
-            url=http://www.st.rs
-        "#;
-        let got_cookie = get_req_cookie("sessionkolacic", example_req);
-        assert_eq!(got_cookie, "123123123");
-
-        let example_req = r#"
-            POST /new HTTP/1.1
-            Host: localhost:8080
-            User-Agent: curl/7.83.1
-            Accept: */*
-            Cookie: sessionkolacic=abcdef
-            Content-Length: 20
-            Content-Type: application/x-www-form-urlencoded
-
-            url=http://www.st.rs
-        "#;
-        let got_cookie = get_req_cookie("sessionkolacic", example_req);
-        assert_eq!(got_cookie, "abcdef");
-
-        let example_req = r#"
-            POST /new HTTP/1.1
-            Host: localhost:8080
-            User-Agent: curl/7.83.1
-            Accept: */*
-            Content-Length: 20
-            Content-Type: application/x-www-form-urlencoded
-
-            url=http://www.st.rs
-        "#;
-        let got_cookie = get_req_cookie("sessionkolacic", example_req);
-        assert_eq!(got_cookie, "");
     }
 }
