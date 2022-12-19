@@ -131,7 +131,7 @@ Content-Type: text/html
     }
 
     pub fn handle_unauthorized(mut stream: TcpStream) {
-        let message = b"HTTP/1.1 401 Unauthorized\r\n";
+        let message = b"HTTP/1.1 401 Unauthorized\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: text/html; charset=UTF-8\r\n\r\nUnauthorized\r\n";
         match stream.write_all(message) {
             Ok(_) => debug!("response [unauthorized] sent"),
             Err(e) => error!("failed sending response [unauthorized]: {}", e),
