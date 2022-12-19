@@ -1,6 +1,6 @@
+use log::{debug, error};
 use std::io::Write;
 use std::net::TcpStream;
-use log::{debug, error};
 
 pub struct Handlers {}
 

@@ -1,14 +1,14 @@
 use http::StatusCode;
 use redis::RedisError;
 
+use crate::delete_handler::DeleteHandler;
 use crate::get_all_handler::GetAllHandler;
 use crate::handlers::Handlers;
 use crate::link_handler::LinkHandler;
 use crate::new_handler::NewHandler;
-use crate::delete_handler::DeleteHandler;
+use log::{debug, error};
 use std::io::Read;
 use std::net::TcpStream;
-use log::{debug, error};
 
 pub struct Router {
     suppress_logs: bool,
@@ -65,9 +65,10 @@ impl Router {
                 let req_str = String::from_utf8_lossy(&buf);
                 if self.is_verbose {
                     self.log(String::from("+++++++++++++++++++++++++++++++++"));
-                    self.log(
-                        String::from(format!("incoming request, len [{}]:", req_str.len()))
-                    );
+                    self.log(String::from(format!(
+                        "incoming request, len [{}]:",
+                        req_str.len()
+                    )));
                     self.log(format!("[[{}]]", req_str.to_string()));
                     self.log(String::from("---------------------------------"));
                 } else {

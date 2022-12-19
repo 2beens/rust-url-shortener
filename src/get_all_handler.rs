@@ -1,7 +1,7 @@
 use http::StatusCode;
+use log::debug;
 use redis::{Commands, Connection, RedisError};
 use std::{collections::HashSet, net::TcpStream};
-use log::debug;
 
 extern crate redis;
 

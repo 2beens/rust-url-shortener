@@ -1,13 +1,13 @@
+use log::{info, trace, warn, LevelFilter};
+use log4rs::append::console::ConsoleAppender;
+use log4rs::append::file::FileAppender;
+use log4rs::config::{Appender, Config, Root};
+use log4rs::encode::pattern::PatternEncoder;
 use rust_url_shortener::server::Server;
 use std::{
     env, process,
     sync::{Arc, Mutex},
 };
-use log::{LevelFilter, trace, info, warn};
-use log4rs::append::console::ConsoleAppender;
-use log4rs::append::file::FileAppender;
-use log4rs::encode::pattern::PatternEncoder;
-use log4rs::config::{Appender, Config, Root};
 
 // to run in windows, with redis running in docker, and port:
 // $env:SERJ_REDIS_PASS = 'todo'; .\rust-url-shortener.exe -p 9001
@@ -55,15 +55,18 @@ fn setup_logger() {
     let stdout = ConsoleAppender::builder().build();
     let logfile = FileAppender::builder()
         .encoder(Box::new(PatternEncoder::new("{d} [{l}]:\t{m}\n")))
-        .build(log_file_path).unwrap();
+        .build(log_file_path)
+        .unwrap();
 
     let config = Config::builder()
         .appender(Appender::builder().build("stdout", Box::new(stdout)))
         .appender(Appender::builder().build("logfile", Box::new(logfile)))
-        .build(Root::builder()
-            .appender("logfile")
-            .appender("stdout")
-            .build(LevelFilter::Trace))
+        .build(
+            Root::builder()
+                .appender("logfile")
+                .appender("stdout")
+                .build(LevelFilter::Trace),
+        )
         .unwrap();
 
     log4rs::init_config(config).unwrap();
