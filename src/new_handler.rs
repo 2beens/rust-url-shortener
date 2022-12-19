@@ -23,31 +23,12 @@ impl NewHandler {
     pub fn handle_new(&mut self, stream: TcpStream, post_body: String) {
         debug!("will add new url from post body: {}", post_body);
 
-        let mut iter = post_body.split_terminator("=");
-        if let Some(url_param) = iter.next() {
-            if url_param != "url" {
-                let err_message = format!("unexpected parameter: {}", url_param);
-                Handlers::respond_with_status_code(
-                    stream,
-                    StatusCode::BAD_REQUEST.as_u16(),
-                    err_message,
-                );
-                return;
-            }
-        }
+        // TODO:
+        // - add support for timestamp, so URLs can be ordered
+        // - add support for custom URL ID
+        // - protect sensitive endpoints (/new & /delete) with some auth
 
-        let mut url = String::from("");
-        if let Some(found_url) = iter.next() {
-            if found_url.len() == 0 {
-                Handlers::respond_with_status_code(
-                    stream,
-                    StatusCode::BAD_REQUEST.as_u16(),
-                    String::from("empty url parameter"),
-                );
-                return;
-            }
-            url = String::from(found_url);
-        }
+        let (url, custom_id) = get_url_data_from_post_body(post_body);
 
         info!("will be adding new url, raw: {}", url);
         let url = decode(url.as_str()).expect("UTF-8");
@@ -68,12 +49,17 @@ impl NewHandler {
             }
         }
 
-        let new_id: String = thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(10)
-            .map(char::from)
-            .collect();
-        info!("new valid url {} will be linked and stored", new_id);
+        let new_id: String;
+        if custom_id != "" {
+            new_id = custom_id
+        } else {
+            new_id = thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(10)
+                .map(char::from)
+                .collect();
+        }
+        info!("new valid url, id [{}] will be linked and stored", new_id);
 
         let url_key = format!("short_url::{}", new_id);
         // TODO: in case error happens, unwrap() will panic; fix that, check for errors
@@ -82,5 +68,72 @@ impl NewHandler {
 
         debug!("new url [{}] has been saved, path: /l/{}", url, new_id);
         Handlers::respond_with_status_code(stream, StatusCode::OK.as_u16(), format!("{}", new_id));
+    }
+}
+
+// get_url_data_from_post_body returns found url and custom ID from thte post body
+// - post_body expected form is: url=http://blabla&cid=some
+fn get_url_data_from_post_body(post_body: String) -> (String, String) {
+    let mut url = String::from("");
+    let mut custom_id = String::from("");
+
+    let post_body_parts: Vec<&str> = post_body.split_terminator("&").collect();
+    if post_body_parts.len() == 0 {
+        return (url, custom_id);
+    }
+
+    let first_param = post_body_parts[0];
+    let first_param_parts: Vec<&str> = first_param.split_terminator("=").collect();
+    match first_param_parts[0] {
+        "url" => url = first_param_parts[1].to_string(),
+        "cid" => custom_id = first_param_parts[1].to_string(),
+        inv_param => debug!("invalid new link param: {}", inv_param)
+    }
+
+    if post_body_parts.len() < 2 {
+        return (url, custom_id);
+    }
+
+    let second_param = post_body_parts[1];
+    let second_param_parts: Vec<&str> = second_param.split_terminator("=").collect();
+    match second_param_parts[0] {
+        "url" => url = second_param_parts[1].to_string(),
+        "cid" => custom_id = second_param_parts[1].to_string(),
+        inv_param => debug!("invalid new link param: {}", inv_param)
+    }
+
+    (url, custom_id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::get_url_data_from_post_body;
+
+    #[test]
+    fn test_get_url_data_from_post_body() {
+        let post_body = "url=http://2beens.xyz&cid=some".to_string();
+        let (url, cid) = get_url_data_from_post_body(post_body);
+        assert_eq!(url, "http://2beens.xyz");
+        assert_eq!(cid, "some");
+
+        let post_body = "cid=some&url=http://2beens.xyz".to_string();
+        let (url, cid) = get_url_data_from_post_body(post_body);
+        assert_eq!(url, "http://2beens.xyz");
+        assert_eq!(cid, "some");
+
+        let post_body = "url=http://2beens.xyz".to_string();
+        let (url, cid) = get_url_data_from_post_body(post_body);
+        assert_eq!(url, "http://2beens.xyz");
+        assert_eq!(cid, "");
+
+        let post_body = "cid=blabla".to_string();
+        let (url, cid) = get_url_data_from_post_body(post_body);
+        assert_eq!(url, "");
+        assert_eq!(cid, "blabla");
+
+        let post_body = "".to_string();
+        let (url, cid) = get_url_data_from_post_body(post_body);
+        assert_eq!(url, "");
+        assert_eq!(cid, "");
     }
 }
