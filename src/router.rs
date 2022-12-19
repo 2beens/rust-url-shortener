@@ -87,28 +87,6 @@ impl Router {
 
                 self.log(format!("==> serving [{}]: {}", method, path));
 
-                // get link and redirect to it
-                if path.starts_with("/l/") {
-                    if method != "GET" {
-                        Handlers::handle_method_not_allowed(stream, method);
-                        return;
-                    }
-
-                    self.link_handler.handle_link(stream, path);
-                    return;
-                } else if path.starts_with("/delete") {
-                    if method == "OPTIONS" {
-                        Handlers::respond_options_ok(stream, path, "DELETE");
-                        return;
-                    } else if method != "DELETE" {
-                        Handlers::handle_method_not_allowed(stream, method);
-                        return;
-                    }
-
-                    self.delete_handler.handle_delete(stream, path);
-                    return;
-                }
-
                 self.route_path(stream, method, path, &req_str);
             }
             Err(e) => error!("Unable to read stream: {}", e),
@@ -116,6 +94,34 @@ impl Router {
     }
 
     fn route_path(&mut self, stream: TcpStream, method: &str, path: &str, req_str: &str) {
+        // get link and redirect to it
+        if path.starts_with("/l/") {
+            if method != "GET" {
+                Handlers::handle_method_not_allowed(stream, method);
+                return;
+            }
+
+            self.link_handler.handle_link(stream, path);
+            return;
+        } else if path.starts_with("/delete") {
+            let session_cookie = get_req_cookie("sessionkolacic", req_str);
+            if session_cookie == "" {
+                Handlers::handle_unauthorized(stream);
+                return;
+            }
+
+            if method == "OPTIONS" {
+                Handlers::respond_options_ok(stream, path, "DELETE");
+                return;
+            } else if method != "DELETE" {
+                Handlers::handle_method_not_allowed(stream, method);
+                return;
+            }
+
+            self.delete_handler.handle_delete(stream, path);
+            return;
+        }
+
         match path {
             "/ping" => Handlers::handle_ping(stream),
             "/hi" => {
@@ -126,6 +132,12 @@ impl Router {
                 }
             }
             "/new" => {
+                let session_cookie = get_req_cookie("sessionkolacic", req_str);
+                if session_cookie == "" {
+                    Handlers::handle_unauthorized(stream);
+                    return;
+                }
+
                 if method == "OPTIONS" {
                     Handlers::respond_options_ok(stream, path, "POST");
                     return;
@@ -150,6 +162,12 @@ impl Router {
                 self.new_handler.handle_new(stream, post_body);
             }
             "/all" => {
+                let session_cookie = get_req_cookie("sessionkolacic", req_str);
+                if session_cookie == "" {
+                    Handlers::handle_unauthorized(stream);
+                    return;
+                }
+
                 if method == "GET" {
                     self.get_all_handler.handle_get_all(stream);
                 } else {
@@ -158,5 +176,63 @@ impl Router {
             }
             _ => Handlers::handle_unknown_path(stream),
         }
+    }
+}
+
+fn get_req_cookie(cookie_id: &str, req_str: &str) -> String {
+    for line in req_str.lines() {
+        let mut next_line = line.trim_start();
+        next_line = next_line.trim_end();
+        if !next_line.starts_with("Cookie:") {
+            continue;
+        }
+        let cookies_line = next_line.strip_prefix("Cookie:").unwrap();
+        let cparts: Vec<&str> = cookies_line.split_terminator("=").collect();
+        if cparts.len() != 2 {
+            continue;
+        }
+        if cparts[0].trim_start() != cookie_id {
+            continue;
+        }
+        return cparts[1].to_string();
+    }
+
+    return "".to_string();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::get_req_cookie;
+
+    #[test]
+    fn test_get_req_cookies() {
+        let example_req = r#"
+            POST /new HTTP/1.1
+            Host: localhost:8080
+            User-Agent: curl/7.83.1
+            Accept: */*
+            Cookie: sessionkolacic=abcdef
+            Content-Length: 20
+            Content-Type: application/x-www-form-urlencoded
+
+            url=http://www.st.rs
+        "#;
+
+        let got_cookie = get_req_cookie("sessionkolacic", example_req);
+        assert_eq!(got_cookie, "abcdef");
+
+        let example_req = r#"
+            POST /new HTTP/1.1
+            Host: localhost:8080
+            User-Agent: curl/7.83.1
+            Accept: */*
+            Content-Length: 20
+            Content-Type: application/x-www-form-urlencoded
+
+            url=http://www.st.rs
+        "#;
+
+        let got_cookie = get_req_cookie("sessionkolacic", example_req);
+        assert_eq!(got_cookie, "");
     }
 }
