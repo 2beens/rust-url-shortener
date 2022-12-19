@@ -53,7 +53,7 @@ Content-Type: text/html
 
     pub fn respond_options_ok(mut stream: TcpStream, path: &str, allowed_method: &str) {
         let response = String::from(
-            format!("HTTP/1.1 204 No Content\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: {},OPTIONS\r\nAccess-Control-Allow-Headers: *\r\n\r\n", allowed_method)
+            format!("HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: {},OPTIONS\r\nAccess-Control-Allow-Headers: *\r\n\r\n<html><body>OK</body></html>\r\n", allowed_method)
         );
         match stream.write_all(response.as_bytes()) {
             Ok(_) => debug!("OPTIONS response sent for path: {}", path),
