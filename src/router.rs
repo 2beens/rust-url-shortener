@@ -109,50 +109,54 @@ impl Router {
                     return;
                 }
 
-                match path {
-                    "/ping" => Handlers::handle_ping(stream),
-                    "/hi" => {
-                        if method == "GET" {
-                            Handlers::handle_hello_world(stream);
-                        } else {
-                            Handlers::handle_method_not_allowed(stream, method);
-                        }
-                    }
-                    "/new" => {
-                        if method == "OPTIONS" {
-                            Handlers::respond_options_ok(stream, path, "POST");
-                            return;
-                        } else if method != "POST" {
-                            Handlers::handle_method_not_allowed(stream, method);
-                            return;
-                        }
-
-                        let post_body;
-                        let mut iter = req_str.lines().rev().take(1);
-                        if let Some(body) = iter.next() {
-                            post_body = String::from(body.trim_matches(char::from(0)));
-                        } else {
-                            Handlers::respond_with_status_code(
-                                stream,
-                                StatusCode::BAD_REQUEST.as_u16(),
-                                String::from("missing request body"),
-                            );
-                            return;
-                        }
-
-                        self.new_handler.handle_new(stream, post_body);
-                    }
-                    "/all" => {
-                        if method == "GET" {
-                            self.get_all_handler.handle_get_all(stream);
-                        } else {
-                            Handlers::handle_method_not_allowed(stream, method);
-                        }
-                    }
-                    _ => Handlers::handle_unknown_path(stream),
-                }
+                self.route_path(stream, method, path, &req_str);
             }
             Err(e) => error!("Unable to read stream: {}", e),
+        }
+    }
+
+    fn route_path(&mut self, stream: TcpStream, method: &str, path: &str, req_str: &str) {
+        match path {
+            "/ping" => Handlers::handle_ping(stream),
+            "/hi" => {
+                if method == "GET" {
+                    Handlers::handle_hello_world(stream);
+                } else {
+                    Handlers::handle_method_not_allowed(stream, method);
+                }
+            }
+            "/new" => {
+                if method == "OPTIONS" {
+                    Handlers::respond_options_ok(stream, path, "POST");
+                    return;
+                } else if method != "POST" {
+                    Handlers::handle_method_not_allowed(stream, method);
+                    return;
+                }
+
+                let post_body;
+                let mut iter = req_str.lines().rev().take(1);
+                if let Some(body) = iter.next() {
+                    post_body = String::from(body.trim_matches(char::from(0)));
+                } else {
+                    Handlers::respond_with_status_code(
+                        stream,
+                        StatusCode::BAD_REQUEST.as_u16(),
+                        String::from("missing request body"),
+                    );
+                    return;
+                }
+
+                self.new_handler.handle_new(stream, post_body);
+            }
+            "/all" => {
+                if method == "GET" {
+                    self.get_all_handler.handle_get_all(stream);
+                } else {
+                    Handlers::handle_method_not_allowed(stream, method);
+                }
+            }
+            _ => Handlers::handle_unknown_path(stream),
         }
     }
 }
