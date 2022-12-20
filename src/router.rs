@@ -1,6 +1,7 @@
 use http::StatusCode;
 use redis::RedisError;
 
+use crate::auth_service::AuthService;
 use crate::delete_handler::DeleteHandler;
 use crate::get_all_handler::GetAllHandler;
 use crate::handlers::Handlers;
@@ -13,6 +14,8 @@ use std::net::TcpStream;
 pub struct Router {
     suppress_logs: bool,
     is_verbose: bool,
+
+    auth_service: AuthService,
 
     // handlers
     link_handler: LinkHandler,
@@ -27,6 +30,11 @@ impl Router {
         suppress_logs: bool,
         is_verbose: bool,
     ) -> Result<Router, RedisError> {
+        let redis_client = redis::Client::open(String::from(&redis_conn_string))?;
+        let redis_conn = redis_client.get_connection()?;
+        let auth_service = AuthService::new(redis_conn);
+        // TODO: try to inject redis connection in other objects
+
         let link_handler = LinkHandler::new(&redis_conn_string)?;
         let new_handler = NewHandler::new(&redis_conn_string)?;
         let delete_handler = DeleteHandler::new(&redis_conn_string)?;
@@ -34,6 +42,7 @@ impl Router {
         Ok(Router {
             suppress_logs,
             is_verbose,
+            auth_service,
             link_handler,
             new_handler,
             get_all_handler,
@@ -108,8 +117,12 @@ impl Router {
                 Handlers::respond_options_ok(stream, path, "DELETE");
                 return;
             } else if method != "DELETE" {
-                let session_cookie = get_req_header("X-SERJ-TOKEN", req_str);
-                if session_cookie == "" {
+                let session_token = get_req_header("X-SERJ-TOKEN", req_str);
+                if !self.auth_service.is_logged(&session_token) {
+                    debug!(
+                        "unauthorized access to /delete detected with [{}]",
+                        session_token
+                    );
                     Handlers::handle_unauthorized(stream);
                     return;
                 }
@@ -140,8 +153,12 @@ impl Router {
                     return;
                 }
 
-                let session_cookie = get_req_header("X-SERJ-TOKEN", req_str);
-                if session_cookie == "" {
+                let session_token = get_req_header("X-SERJ-TOKEN", req_str);
+                if !self.auth_service.is_logged(&session_token) {
+                    debug!(
+                        "unauthorized access to /new detected with [{}]",
+                        session_token
+                    );
                     Handlers::handle_unauthorized(stream);
                     return;
                 }
@@ -165,8 +182,12 @@ impl Router {
                 if method == "OPTIONS" {
                     Handlers::respond_options_ok(stream, path, "GET");
                 } else if method == "GET" {
-                    let session_cookie = get_req_header("X-SERJ-TOKEN", req_str);
-                    if session_cookie == "" {
+                    let session_token = get_req_header("X-SERJ-TOKEN", req_str);
+                    if !self.auth_service.is_logged(&session_token) {
+                        debug!(
+                            "unauthorized access to /all detected with [{}]",
+                            session_token
+                        );
                         Handlers::handle_unauthorized(stream);
                         return;
                     }

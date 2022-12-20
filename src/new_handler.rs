@@ -23,13 +23,6 @@ impl NewHandler {
     pub fn handle_new(&mut self, stream: TcpStream, post_body: String) {
         debug!("will add new url from post body: {}", post_body);
 
-        // TODO:
-        // - add support for timestamp, so URLs can be ordered
-        // - add support for custom URL ID
-        // - protect sensitive endpoints (/new & /delete) with some auth
-        //      - read session cookie and validate it
-        // - validate custom_id - check if exists
-
         let (url, custom_id) = get_url_data_from_post_body(post_body);
 
         info!("will be adding new url, raw: {}", url);
