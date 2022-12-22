@@ -30,22 +30,45 @@ impl AuthService {
             }
         };
 
-        let created_at_unix = created_at_unix_str.parse::<i64>().unwrap();
         debug!(
             "auth service, checking logged in for [{}], created at: {}",
-            token, created_at_unix
+            token, created_at_unix_str
         );
 
-        let created_at_naive = NaiveDateTime::from_timestamp_opt(created_at_unix, 0).unwrap();
-        let created_at: DateTime<Utc> = DateTime::from_utc(created_at_naive, Utc);
-        let created_at_with_ttl = created_at
-            .checked_add_signed(Duration::days(DEFAULT_TTL_DAYS))
-            .unwrap();
+        return is_created_at_valid(Utc::now(), created_at_unix_str);
+    }
+}
 
-        if Utc::now() > created_at_with_ttl {
-            return false;
-        }
+fn is_created_at_valid(now: DateTime<Utc>, created_at_unix_str: String) -> bool {
+    if created_at_unix_str == "" {
+        return false;
+    }
 
-        return true;
+    let created_at_unix = created_at_unix_str.parse::<i64>().unwrap();
+    let created_at_naive = NaiveDateTime::from_timestamp_opt(created_at_unix, 0).unwrap();
+    let created_at: DateTime<Utc> = DateTime::from_utc(created_at_naive, Utc);
+    let created_at_with_ttl = created_at
+        .checked_add_signed(Duration::days(DEFAULT_TTL_DAYS))
+        .unwrap();
+
+    if now > created_at_with_ttl {
+        return false;
+    }
+
+    return true;
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::prelude::*;
+
+    use super::is_created_at_valid;
+
+    #[test]
+    fn test_is_created_at_valid() {
+        let now: DateTime<Utc> = Utc.with_ymd_and_hms(2022, 12, 25, 0, 0, 0).unwrap();
+        assert_eq!(true, is_created_at_valid(now, "1671731525".to_string())); // 1671731525 = 2022 dec 22
+        assert_eq!(false, is_created_at_valid(now, "1669139064".to_string())); // 1669139064 = 22 nov 22
+        assert_eq!(false, is_created_at_valid(now, "".to_string()));
     }
 }
