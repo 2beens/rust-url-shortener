@@ -1,7 +1,7 @@
 use crate::handlers::Handlers;
 use http::StatusCode;
-use std::net::TcpStream;
 use log::debug;
+use std::net::TcpStream;
 
 extern crate redis;
 use redis::{Commands, Connection, RedisError};

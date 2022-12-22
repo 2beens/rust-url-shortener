@@ -1,6 +1,6 @@
+use log::{debug, error};
 use std::io::Write;
 use std::net::TcpStream;
-use log::{debug, error};
 
 pub struct Handlers {}
 
@@ -127,6 +127,18 @@ Content-Type: text/html
         match stream.flush() {
             Ok(_) => debug!("response flushed"),
             Err(e) => error!("failed flushing json response: {}", e),
+        }
+    }
+
+    pub fn handle_unauthorized(mut stream: TcpStream) {
+        let message = b"HTTP/1.1 401 Unauthorized\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: text/html; charset=UTF-8\r\n\r\nUnauthorized\r\n";
+        match stream.write_all(message) {
+            Ok(_) => debug!("response [unauthorized] sent"),
+            Err(e) => error!("failed sending response [unauthorized]: {}", e),
+        }
+        match stream.flush() {
+            Ok(_) => debug!("response [unauthorized] flushed"),
+            Err(e) => error!("failed flushing json [unauthorized] response: {}", e),
         }
     }
 }

@@ -1,6 +1,6 @@
+use log::debug;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
-use log::debug;
 
 pub struct ThreadPool {
     workers: Vec<Worker>,

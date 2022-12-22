@@ -1,8 +1,9 @@
+pub mod auth_service;
+pub mod delete_handler;
 pub mod get_all_handler;
 pub mod handlers;
 pub mod link_handler;
 pub mod new_handler;
-pub mod delete_handler;
 pub mod router;
 pub mod server;
 pub mod thread_pool;
