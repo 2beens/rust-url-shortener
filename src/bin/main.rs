@@ -17,7 +17,11 @@ fn main() {
 
     setup_logger();
 
-    let (host, redis_host, port) = get_hosts_and_port();
+    let redis_host;
+    match env::var("RUS_REDIS_HOST") {
+        Ok(val) => redis_host = val,
+        Err(_e) => redis_host = "127.0.0.1".to_string(),
+    }
 
     let redis_conn_string;
     match env::var("SERJ_REDIS_PASS") {
@@ -26,6 +30,7 @@ fn main() {
     }
     trace!(">> using redis conn string: {}", redis_conn_string);
 
+    let (host, port) = get_host_and_port();
     let address = format!("{}:{}", host, port);
     info!("will be listening on: {}", address);
 
@@ -74,9 +79,8 @@ fn setup_logger() {
     info!("logger setup completed...");
 }
 
-fn get_hosts_and_port() -> (String, String, u16) {
+fn get_host_and_port() -> (String, u16) {
     let mut host = "127.0.0.1";
-    let mut redis_host = "127.0.0.1";
     let mut port: u16 = 8080;
 
     let args: Vec<String> = env::args().collect();
@@ -87,13 +91,6 @@ fn get_hosts_and_port() -> (String, String, u16) {
                 process::exit(1);
             }
             host = args[i + 1].as_str();
-        }
-        if args[i] == "-redishost" || args[i] == "-rh" {
-            if i + 1 == args.len() {
-                eprintln!("invalid arguments [redishost], args len: {}", args.len());
-                process::exit(1);
-            }
-            redis_host = args[i + 1].as_str();
         }
         if args[i] == "-port" || args[i] == "-p" {
             if i + 1 == args.len() {
@@ -110,5 +107,5 @@ fn get_hosts_and_port() -> (String, String, u16) {
         }
     }
 
-    (String::from(host), String::from(redis_host), port)
+    (String::from(host), port)
 }

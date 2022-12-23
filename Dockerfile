@@ -1,7 +1,7 @@
 # 1 build:
 # docker build -t rus .
 # 2 run:
-# docker run -it --rm --name rus1 rus
+# docker run -it --rm --name rus1 -e RUS_REDIS_HOST='0.0.0.0' rus
 
 FROM rust:1.66 as builder
 
@@ -17,4 +17,4 @@ FROM rust:1.66-slim-buster
 COPY --from=builder /rus/target/release/rust-url-shortener .
 
 # set the startup command to run your binary
-CMD ["./rust-url-shortener", "-p", "9001", "-redishost", "127.0.0.1"]
+CMD ["./rust-url-shortener", "-p", "9001"]
