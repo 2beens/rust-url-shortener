@@ -260,7 +260,23 @@ mod tests {
 
             url=http://www.st.rs
         "#;
-        let got_cookie = get_req_header("X-SERJ-TOKEN", example_req);
-        assert_eq!(got_cookie, "blabla");
+        let got_header_value = get_req_header("X-SERJ-TOKEN", example_req);
+        assert_eq!(got_header_value, "blabla");
+        let got_header_value = get_req_header("Cookie", example_req);
+        assert_eq!(got_header_value, "sessionkolacic=abcdef");
+
+        let example_req = r#"
+            POST /new HTTP/1.1
+            Host: localhost:8080
+            User-Agent: curl/7.83.1
+            Accept: */*
+            Cookie: sessionkolacic=abcdef
+            Content-Length: 20
+            Content-Type: application/x-www-form-urlencoded
+
+            url=http://www.st.rs
+        "#;
+        let got_header_value = get_req_header("X-SERJ-TOKEN", example_req);
+        assert_eq!(got_header_value, "");
     }
 }
