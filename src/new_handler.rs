@@ -69,11 +69,22 @@ impl NewHandler {
 
         let url_key = format!("short_url::{}", new_id);
 
-        let id_inuse: bool = redis::cmd("SISMEMBER")
+        let id_inuse: bool = match redis::cmd("SISMEMBER")
             .arg("short_urls")
             .arg(&url_key)
             .query(&mut self.redis_conn)
-            .expect("failed to execute SISMEMBER for 'short_urls'");
+        {
+            Ok(val) => val,
+            Err(err) => {
+                debug!("failed to execute SISMEMBER for 'short_urls': {}", err);
+                Handlers::respond_with_status_code(
+                    stream,
+                    StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                    err.to_string(),
+                );
+                return;
+            }
+        };
         if id_inuse {
             debug!(
                 "error, url with key {} already exists, skipping add",
@@ -87,12 +98,34 @@ impl NewHandler {
             return;
         }
 
-        // TODO: in case error happens, unwrap() will panic; fix that, check for errors
-        let _: () = self
-            .redis_conn
-            .set(&url_key, String::from(url.clone()))
-            .unwrap();
-        let _: () = self.redis_conn.sadd("short_urls", &url_key).unwrap();
+        let _: () = match self.redis_conn.set(&url_key, String::from(url.clone())) {
+            Ok(val) => val,
+            Err(err) => {
+                debug!(
+                    "failed to execute SET for new url key [{}]: {}",
+                    url_key, err
+                );
+                Handlers::respond_with_status_code(
+                    stream,
+                    StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                    err.to_string(),
+                );
+                return;
+            }
+        };
+
+        let _: () = match self.redis_conn.sadd("short_urls", &url_key) {
+            Ok(val) => val,
+            Err(err) => {
+                debug!("failed to execute SADD for 'short_urls': {}", err);
+                Handlers::respond_with_status_code(
+                    stream,
+                    StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                    err.to_string(),
+                );
+                return;
+            }
+        };
 
         debug!("new url [{}] has been saved, path: /l/{}", url, new_id);
         Handlers::respond_with_status_code(stream, StatusCode::OK.as_u16(), format!("{}", new_id));
