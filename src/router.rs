@@ -72,6 +72,7 @@ impl Router {
         match stream.read(&mut buf) {
             Ok(_) => {
                 let req_str = String::from_utf8_lossy(&buf);
+                let req_str = req_str.trim_end();
                 if self.is_verbose {
                     self.log(String::from("+++++++++++++++++++++++++++++++++"));
                     self.log(String::from(format!(
@@ -91,11 +92,30 @@ impl Router {
                 }
 
                 let mut iter = req_str.split_whitespace().take(2);
-                let method = iter.next().unwrap();
-                let path = iter.next().unwrap();
+                let method = match iter.next() {
+                    Some(m) => m,
+                    None => {
+                        Handlers::respond_with_status_code(
+                            stream,
+                            StatusCode::BAD_REQUEST.as_u16(),
+                            "http method not found".to_string(),
+                        );
+                        return;
+                    }
+                };
+                let path = match iter.next() {
+                    Some(p) => p,
+                    None => {
+                        Handlers::respond_with_status_code(
+                            stream,
+                            StatusCode::BAD_REQUEST.as_u16(),
+                            "http path not found".to_string(),
+                        );
+                        return;
+                    }
+                };
 
                 self.log(format!("==> serving [{}]: {}", method, path));
-
                 self.route_path(stream, method, path, &req_str);
             }
             Err(e) => error!("Unable to read stream: {}", e),
