@@ -39,17 +39,39 @@ impl AuthService {
     }
 }
 
-fn is_created_at_valid(now: DateTime<Utc>, created_at_unix_str: String) -> bool {
-    if created_at_unix_str == "" {
+fn is_created_at_valid(now: DateTime<Utc>, created_at_unix: String) -> bool {
+    if created_at_unix == "" {
         return false;
     }
 
-    let created_at_unix = created_at_unix_str.parse::<i64>().unwrap();
-    let created_at_naive = NaiveDateTime::from_timestamp_opt(created_at_unix, 0).unwrap();
+    let created_at_unix = match created_at_unix.parse::<i64>() {
+        Ok(v) => v,
+        Err(err) => {
+            debug!("parse created at [{}]: {}", created_at_unix, err);
+            return false;
+        }
+    };
+
+    let created_at_naive = match NaiveDateTime::from_timestamp_opt(created_at_unix, 0) {
+        Some(v) => v,
+        None => {
+            debug!(
+                "failed to create native date time from ts: {}",
+                created_at_unix
+            );
+            return false;
+        }
+    };
+
     let created_at: DateTime<Utc> = DateTime::from_utc(created_at_naive, Utc);
-    let created_at_with_ttl = created_at
-        .checked_add_signed(Duration::days(DEFAULT_TTL_DAYS))
-        .unwrap();
+    let created_at_with_ttl = match created_at.checked_add_signed(Duration::days(DEFAULT_TTL_DAYS))
+    {
+        Some(v) => v,
+        None => {
+            debug!("failed to create ttl time from created at: {}", created_at);
+            return false;
+        }
+    };
 
     if now > created_at_with_ttl {
         return false;
