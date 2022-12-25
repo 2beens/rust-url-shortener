@@ -24,7 +24,19 @@ impl GetAllHandler {
         let mut res_json: Vec<String> = vec![String::from("[")];
 
         // get all link ids
-        let url_keys: HashSet<String> = self.redis_conn.smembers("short_urls").unwrap();
+        let url_keys: HashSet<String> = match self.redis_conn.smembers("short_urls") {
+            Ok(uk) => uk,
+            Err(err) => {
+                debug!("failed to execute SMEMBERS for 'short_urls': {}", err);
+                Handlers::respond_with_status_code(
+                    stream,
+                    StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                    err.to_string(),
+                );
+                return;
+            }
+        };
+
         for url_key in &url_keys {
             match self.redis_conn.get::<&String, String>(&url_key) {
                 Ok(url) => {
