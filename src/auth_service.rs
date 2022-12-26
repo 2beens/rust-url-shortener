@@ -7,13 +7,33 @@ extern crate redis;
 const SESSION_KEY_PREFIX: &str = "serj-service-session||";
 const DEFAULT_TTL_DAYS: i64 = 7;
 
+pub trait SessionStorage {
+    fn get_session_created_at(&mut self, session_token: String) -> String;
+}
+
+impl SessionStorage for Connection {
+    fn get_session_created_at(&mut self, session_token: String) -> String {
+        let created_at_unix_str: String = match self.get(&session_token) {
+            Ok(v) => v,
+            Err(e) => {
+                debug!(
+                    "failed to find token in sessions [{}]: {}",
+                    &session_token, e
+                );
+                return "".to_string();
+            }
+        };
+        return created_at_unix_str;
+    }
+}
+
 pub struct AuthService {
-    redis_conn: Connection,
+    session_storage: dyn SessionStorage,
 }
 
 impl AuthService {
-    pub fn new(redis_conn: Connection) -> AuthService {
-        AuthService { redis_conn }
+    pub fn new(session_storage: dyn SessionStorage) -> AuthService {
+        AuthService { session_storage }
     }
 
     pub fn is_logged(&mut self, token: &String) -> bool {
@@ -22,14 +42,7 @@ impl AuthService {
         }
 
         let session_key = format!("{}{}", SESSION_KEY_PREFIX, token);
-        let created_at_unix_str: String = match self.redis_conn.get(session_key) {
-            Ok(v) => v,
-            Err(e) => {
-                debug!("failed to find token in sessions [{}]: {}", token, e);
-                return false;
-            }
-        };
-
+        let created_at_unix_str: String = self.session_storage.get_session_created_at(session_key);
         debug!(
             "auth service, checking logged in for [{}], created at: {}",
             token, created_at_unix_str
