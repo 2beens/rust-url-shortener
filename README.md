@@ -21,3 +21,8 @@ Disclaimer 2: A Rust project made by a Rust beginner, many parts re suboptimal a
  - ✔ add support for custom URL ID
  - ✔ protect sensitive endpoints with some auth
    - ✔ read session token and validate it
+ - add link statistics:
+   - number of times a link has been accesssed
+   - link creation timestamp
+     - (with these two, stale/old/unused links can be detected easier)
+   - link update
