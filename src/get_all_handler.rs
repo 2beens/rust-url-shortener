@@ -21,8 +21,6 @@ impl GetAllHandler {
     pub fn handle_get_all(&mut self, stream: TcpStream) {
         debug!("trying to find and return all links ...");
 
-        let mut res_json: Vec<String> = vec![String::from("[")];
-
         // get all link ids
         let url_keys: HashSet<String> = match self.redis_conn.smembers("short_urls") {
             Ok(uk) => uk,
@@ -37,16 +35,18 @@ impl GetAllHandler {
             }
         };
 
+        let mut url_records = vec![];
+
         for url_key in &url_keys {
             match self.redis_conn.get::<&String, String>(&url_key) {
                 Ok(url_record) => {
-                    let url_record = URLRecord::from_json(&url_record);
-                    res_json.push(format!(
-                        r#"{{ "key": "{}", "record": "{}" }}"#,
-                        &url_key,
-                        url_record.to_json()
-                    ));
-                    res_json.push(String::from(","))
+                    // url key is created as: format!("short_url::{}", new_id);
+                    let url_id = url_key.split("::");
+                    let url_id = url_id.collect::<Vec<&str>>();
+                    let url_id = url_id[1];
+
+                    let url_record = URLRecord::from_json(url_id.to_string(), &url_record);
+                    url_records.push(url_record);
                 }
                 Err(e) => {
                     debug!("error reading URL by key [{}]: {}", &url_key, e)
@@ -54,13 +54,8 @@ impl GetAllHandler {
             }
         }
 
-        // pop last comma
-        if &url_keys.len() > &0 {
-            res_json.pop();
-        }
+        let res_json = serde_json::to_string(&url_records).unwrap();
 
-        res_json.push(String::from("]"));
-
-        Handlers::json_response(stream, StatusCode::OK.as_u16(), res_json.concat());
+        Handlers::json_response(stream, StatusCode::OK.as_u16(), res_json);
     }
 }

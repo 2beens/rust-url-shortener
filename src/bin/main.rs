@@ -11,6 +11,8 @@ use std::{
 
 // to run in windows, with redis running in docker, and port:
 // $env:SERJ_REDIS_PASS = 'todo'; .\rust-url-shortener.exe -p 9001
+// or locally:
+// cargo run -- -redispass todo --insecure 
 
 fn main() {
     println!("starting url shortener ...");

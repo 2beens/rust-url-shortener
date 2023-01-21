@@ -1,4 +1,4 @@
-use crate::handlers::Handlers;
+use crate::{handlers::Handlers, url_record::URLRecord};
 use http::StatusCode;
 use log::debug;
 use std::net::TcpStream;
@@ -33,11 +33,14 @@ impl LinkHandler {
             }
         }
 
+        debug!(">>> will redirect to url id: [{}]", url_id);
+
         let url_key = format!("short_url::{}", url_id);
         match self.redis_conn.get::<String, String>(url_key) {
-            Ok(url) => {
-                debug!(">>> found url to redirect to: [{}]", url);
-                Handlers::handle_redirect(stream, url);
+            Ok(url_record) => {
+                let url_record = URLRecord::from_json(url_id, &url_record);
+                debug!(">>> found url to redirect to: [{}]", url_record.url);
+                Handlers::handle_redirect(stream, url_record.url);
             }
             Err(e) => {
                 Handlers::respond_with_status_code(

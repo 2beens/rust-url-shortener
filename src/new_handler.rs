@@ -66,9 +66,9 @@ impl NewHandler {
                 .map(char::from)
                 .collect();
         }
-        info!("new valid url, id [{}] will be linked and stored", new_id);
+        info!("new valid url, id [{}] will be linked and stored", &new_id);
 
-        let url_key = format!("short_url::{}", new_id);
+        let url_key = format!("short_url::{}", &new_id);
 
         let id_inuse: bool = match redis::cmd("SISMEMBER")
             .arg("short_urls")
@@ -100,6 +100,7 @@ impl NewHandler {
         }
 
         let url_record = URLRecord {
+            id: new_id.to_string(),
             url: url.to_string(),
             timestamp: Utc::now().timestamp(),
         };
