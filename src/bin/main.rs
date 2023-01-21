@@ -11,6 +11,8 @@ use std::{
 
 // to run in windows, with redis running in docker, and port:
 // $env:SERJ_REDIS_PASS = 'todo'; .\rust-url-shortener.exe -p 9001
+// or locally:
+// cargo run -- -redispass todo --insecure -port 9001
 
 fn main() {
     println!("starting url shortener ...");
@@ -26,7 +28,14 @@ fn main() {
     let redis_conn_string;
     match env::var("SERJ_REDIS_PASS") {
         Ok(val) => redis_conn_string = format!("redis://default:{}@{}/", val, redis_host),
-        Err(_e) => redis_conn_string = format!("redis://{}/", redis_host),
+        Err(_e) => {
+            let redis_pass_arg = get_redis_pass_arg();
+            if redis_pass_arg != "" {
+                redis_conn_string = format!("redis://default:{}@{}/", redis_pass_arg, redis_host)
+            } else {
+                redis_conn_string = format!("redis://{}/", redis_host)
+            }
+        }
     }
     trace!(">> using redis conn string: {}", redis_conn_string);
 
@@ -34,8 +43,13 @@ fn main() {
     let address = format!("{}:{}", host, port);
     info!("will be listening on: {}", address);
 
+    let with_insecure_auth_service = get_is_insecure_auth_service_arg();
+    if with_insecure_auth_service {
+        warn!("!! running with drunken auth service which lets anyone in");
+    }
+
     let server = Arc::new(Mutex::new(
-        Server::new(redis_conn_string, address, 5).unwrap(),
+        Server::new(redis_conn_string, address, 5, with_insecure_auth_service).unwrap(),
     ));
     // let server_clone = server.clone();
 
@@ -77,6 +91,30 @@ fn setup_logger() {
     log4rs::init_config(config).unwrap();
 
     info!("logger setup completed...");
+}
+
+// try to check if "--insecure" program arg is provided, in which case auth service will skip
+// checks for legit (logged in) requests
+fn get_is_insecure_auth_service_arg() -> bool {
+    let args: Vec<String> = env::args().collect();
+    for i in 0..args.len() {
+        if args[i] == "--insecure" {
+            return true;
+        }
+    }
+    return false;
+}
+
+// in windows it's annoying to work with env vars, so we need to be able to provide redis
+//  password with program args when developing too
+fn get_redis_pass_arg() -> String {
+    let args: Vec<String> = env::args().collect();
+    for i in 0..args.len() {
+        if args[i] == "-redispass" {
+            return args[i + 1].to_string();
+        }
+    }
+    return String::from("");
 }
 
 fn get_host_and_port() -> (String, u16) {

@@ -16,8 +16,10 @@ impl Server {
         redis_conn_string: String,
         address: String,
         max_concurrent_requests: usize,
+        with_insecure_auth_service: bool,
     ) -> Result<Server, RedisError> {
-        let router = Router::new(redis_conn_string, false, true)?.with_logs();
+        let router =
+            Router::new(redis_conn_string, false, true, with_insecure_auth_service)?.with_logs();
         let router = Arc::new(Mutex::new(router));
 
         Ok(Server {
