@@ -103,6 +103,7 @@ impl NewHandler {
             id: new_id.to_string(),
             url: url.to_string(),
             timestamp: Utc::now().timestamp(),
+            hits: 0,
         };
 
         let url_record_json = url_record.to_json();

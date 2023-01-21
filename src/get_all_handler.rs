@@ -1,5 +1,5 @@
 use http::StatusCode;
-use log::debug;
+use log::{debug, warn};
 use redis::{Commands, Connection, RedisError};
 use std::{collections::HashSet, net::TcpStream};
 
@@ -43,6 +43,10 @@ impl GetAllHandler {
                     // url key is created as: format!("short_url::{}", new_id);
                     let url_id = url_key.split("::");
                     let url_id = url_id.collect::<Vec<&str>>();
+                    if url_id.len() != 2 {
+                        warn!("!! invalid url key: {}", url_key);
+                        continue;
+                    }
                     let url_id = url_id[1];
 
                     let url_record = URLRecord::from_json(url_id.to_string(), &url_record);
