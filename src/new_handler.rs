@@ -1,3 +1,4 @@
+use chrono::Utc;
 use http::StatusCode;
 use log::{debug, info};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
@@ -7,7 +8,7 @@ use url::Url;
 use urlencoding::decode;
 
 extern crate redis;
-use crate::handlers::Handlers;
+use crate::{handlers::Handlers, url_record::URLRecord};
 
 pub struct NewHandler {
     redis_conn: Connection,
@@ -98,7 +99,15 @@ impl NewHandler {
             return;
         }
 
-        let _: () = match self.redis_conn.set(&url_key, String::from(url.clone())) {
+        let url_record = URLRecord {
+            url: url.to_string(),
+            timestamp: Utc::now().timestamp(),
+        };
+
+        let url_record_json = url_record.to_json();
+        println!("++ storing new url record: {}", url_record_json);
+
+        let _: () = match self.redis_conn.set(&url_key, String::from(url_record_json)) {
             Ok(val) => val,
             Err(err) => {
                 debug!(

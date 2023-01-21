@@ -7,3 +7,4 @@ pub mod new_handler;
 pub mod router;
 pub mod server;
 pub mod thread_pool;
+pub mod url_record;

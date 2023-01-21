@@ -29,10 +29,11 @@ impl Router {
         redis_conn_string: String,
         suppress_logs: bool,
         is_verbose: bool,
+        with_insecure_auth_service: bool,
     ) -> Result<Router, RedisError> {
         let redis_client = redis::Client::open(String::from(&redis_conn_string))?;
         let redis_conn = redis_client.get_connection()?;
-        let auth_service = AuthService::new(redis_conn);
+        let auth_service = AuthService::new(redis_conn, with_insecure_auth_service);
         // TODO: try to inject redis connection in other objects
 
         let link_handler = LinkHandler::new(&redis_conn_string)?;

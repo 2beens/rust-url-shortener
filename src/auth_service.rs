@@ -9,14 +9,19 @@ const DEFAULT_TTL_DAYS: i64 = 7;
 
 pub struct AuthService {
     redis_conn: Connection,
+    is_insecure: bool,
 }
 
 impl AuthService {
-    pub fn new(redis_conn: Connection) -> AuthService {
-        AuthService { redis_conn }
+    pub fn new(redis_conn: Connection, is_insecure: bool) -> AuthService {
+        AuthService { redis_conn, is_insecure }
     }
 
     pub fn is_logged(&mut self, token: &String) -> bool {
+        if self.is_insecure {
+            return true;
+        }
+
         if token == "" {
             return false;
         }

@@ -5,7 +5,7 @@ use std::{collections::HashSet, net::TcpStream};
 
 extern crate redis;
 
-use crate::handlers::Handlers;
+use crate::{handlers::Handlers, url_record::URLRecord};
 
 pub struct GetAllHandler {
     redis_conn: Connection,
@@ -39,8 +39,13 @@ impl GetAllHandler {
 
         for url_key in &url_keys {
             match self.redis_conn.get::<&String, String>(&url_key) {
-                Ok(url) => {
-                    res_json.push(format!(r#"{{ "key": "{}", "url": "{}" }}"#, &url_key, url));
+                Ok(url_record) => {
+                    let url_record = URLRecord::from_json(&url_record);
+                    res_json.push(format!(
+                        r#"{{ "key": "{}", "record": "{}" }}"#,
+                        &url_key,
+                        url_record.to_json()
+                    ));
                     res_json.push(String::from(","))
                 }
                 Err(e) => {
