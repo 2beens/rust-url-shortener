@@ -17,7 +17,10 @@ Disclaimer 2: A Rust project made by a Rust beginner, many parts re suboptimal a
  - ✔ add business logic
  - ✔ add logger
  - ⏱ add unit tests
- - add support for timestamp, so URLs can be ordered
+ - ✔ add support for timestamp, so URLs can be ordered
  - ✔ add support for custom URL ID
  - ✔ protect sensitive endpoints with some auth
    - ✔ read session token and validate it
+ - basic Telemetry:
+   - dist. tracing with Honeycomb
+   - basic metrics to Prometheus
