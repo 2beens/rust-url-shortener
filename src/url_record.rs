@@ -24,7 +24,7 @@ impl URLRecord {
                     hits: 0,
                 };
             }
-        }
+        };
     }
 
     pub fn to_json(&self) -> String {

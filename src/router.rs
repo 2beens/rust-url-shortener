@@ -197,7 +197,8 @@ impl Router {
                     return;
                 }
 
-                self.new_handler.handle_new(stream, post_body);
+                let content_type = get_req_header("Content-Type", req_str);
+                self.new_handler.handle_new(stream, post_body, content_type);
             }
             "/all" => {
                 if method == "OPTIONS" {
@@ -265,19 +266,23 @@ mod tests {
         assert_eq!(got_header_value, "blabla");
         let got_header_value = get_req_header("Cookie", example_req);
         assert_eq!(got_header_value, "sessionkolacic=abcdef");
+        let got_header_value = get_req_header("Content-Type", example_req);
+        assert_eq!(got_header_value, "application/x-www-form-urlencoded");
 
         let example_req = r#"
             POST /new HTTP/1.1
             Host: localhost:8080
+            Content-Length: 20
+            Content-Type: application/json
             User-Agent: curl/7.83.1
             Accept: */*
             Cookie: sessionkolacic=abcdef
-            Content-Length: 20
-            Content-Type: application/x-www-form-urlencoded
 
             url=http://www.st.rs
         "#;
         let got_header_value = get_req_header("X-SERJ-TOKEN", example_req);
         assert_eq!(got_header_value, "");
+        let got_header_value = get_req_header("Content-Type", example_req);
+        assert_eq!(got_header_value, "application/json");
     }
 }
