@@ -3,6 +3,7 @@ use http::StatusCode;
 use log::{debug, info};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use redis::{Commands, Connection, RedisError};
+use serde_json::Value;
 use std::net::TcpStream;
 use url::Url;
 use urlencoding::decode;
@@ -21,10 +22,10 @@ impl NewHandler {
         Ok(NewHandler { redis_conn })
     }
 
-    pub fn handle_new(&mut self, stream: TcpStream, post_body: String) {
+    pub fn handle_new(&mut self, stream: TcpStream, post_body: String, content_type: String) {
         debug!("will add new url from post body: {}", post_body);
 
-        let (url, custom_id) = match get_url_data_from_post_body(post_body) {
+        let (url, custom_id) = match get_url_data_from_post_body(post_body, content_type) {
             Ok((url, cid)) => (url, cid),
             Err(err) => {
                 debug!("new url: {}", err);
@@ -143,9 +144,40 @@ impl NewHandler {
     }
 }
 
-// get_url_data_from_post_body returns found url and custom ID from thte post body
+fn get_url_data_from_post_body(
+    post_body: String,
+    content_type: String,
+) -> Result<(String, String), String> {
+    match content_type.as_str() {
+        "application/json" => get_url_data_from_json_body(post_body),
+        "application/x-www-form-urlencoded" => get_url_data_from_form_urlencoded_body(post_body),
+        _ => Err("Invalid content_type".to_string()),
+    }
+}
+
+fn get_url_data_from_json_body(json_str: String) -> Result<(String, String), String> {
+    let parsed_json: Value =
+        serde_json::from_str(&json_str).map_err(|_| "Failed to parse JSON".to_string())?;
+
+    let url = parsed_json
+        .get("url")
+        .ok_or("Missing url field in JSON".to_string())?
+        .as_str()
+        .ok_or("url field is not a string".to_string())?
+        .to_string();
+
+    let id = parsed_json
+        .get("cid")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+
+    Ok((url, id))
+}
+
+// get_url_data_from_post_body returns found url and custom ID from the post body
 // - post_body expected form is: url=http://blabla&cid=some
-fn get_url_data_from_post_body(post_body: String) -> Result<(String, String), String> {
+fn get_url_data_from_form_urlencoded_body(post_body: String) -> Result<(String, String), String> {
     let mut url = String::from("");
     let mut custom_id = String::from("");
 
@@ -198,15 +230,17 @@ mod tests {
 
     fn test_get_url_data_case(
         post_body: &str,
+        content_type: &str,
         want_url: &str,
         want_cid: &str,
     ) -> Result<(), String> {
-        let (url, cid) = match get_url_data_from_post_body(post_body.to_string()) {
-            Ok((url, cid)) => (url, cid),
-            Err(err) => {
-                return Err(err);
-            }
-        };
+        let (url, cid) =
+            match get_url_data_from_post_body(post_body.to_string(), content_type.to_string()) {
+                Ok((url, cid)) => (url, cid),
+                Err(err) => {
+                    return Err(err);
+                }
+            };
         if url != want_url {
             return Err(format!("want url: {}, but got: {}", want_url, url));
         }
@@ -221,18 +255,38 @@ mod tests {
         [
             (
                 "url=http://2beens.xyz&cid=some",
+                "application/x-www-form-urlencoded",
                 "http://2beens.xyz",
                 "some",
             ),
             (
                 "cid=some&url=http://2beens.xyz",
+                "application/x-www-form-urlencoded",
                 "http://2beens.xyz",
                 "some",
             ),
-            ("url=http://2beens.xyz", "http://2beens.xyz", ""),
+            (
+                "url=http://2beens.xyz",
+                "application/x-www-form-urlencoded",
+                "http://2beens.xyz",
+                "",
+            ),
+            // json content type
+            (
+                r#"{"url":"http://2beens.xyz", "cid":"some"}"#,
+                "application/json",
+                "http://2beens.xyz",
+                "some",
+            ),
+            (
+                r#"{"url":"http://2beens.xyz"}"#,
+                "application/json",
+                "http://2beens.xyz",
+                "",
+            ),
         ]
         .iter()
-        .try_for_each(|(pb, url, cid)| test_get_url_data_case(*pb, *url, *cid))?;
+        .try_for_each(|(pb, ct, url, cid)| test_get_url_data_case(*pb, *ct, *url, *cid))?;
 
         Ok(())
     }
@@ -250,7 +304,36 @@ mod tests {
         ]
         .iter()
         .try_for_each(|pb| {
-            let (url, cid) = match get_url_data_from_post_body((*pb).to_string()) {
+            let (url, cid) = match get_url_data_from_post_body(
+                (*pb).to_string(),
+                "application/x-www-form-urlencoded".to_string(),
+            ) {
+                Ok((url, cid)) => (url, cid),
+                Err(_) => return Ok(()),
+            };
+            Err(format!(
+                "unexpected url and cid received for [{}]: {}, {}",
+                pb, url, cid
+            ))
+        })?;
+
+        [
+            "",
+            "{}",
+            "{blabla}",
+            r#"{"cid": "some"}"#,
+            "url=&cid=some",
+            "cid=&url=some",
+            "url==",
+            "url==",
+            "cid=id1",
+        ]
+        .iter()
+        .try_for_each(|pb| {
+            let (url, cid) = match get_url_data_from_post_body(
+                (*pb).to_string(),
+                "application/json".to_string(),
+            ) {
                 Ok((url, cid)) => (url, cid),
                 Err(_) => return Ok(()),
             };

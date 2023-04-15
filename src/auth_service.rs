@@ -14,7 +14,10 @@ pub struct AuthService {
 
 impl AuthService {
     pub fn new(redis_conn: Connection, is_insecure: bool) -> AuthService {
-        AuthService { redis_conn, is_insecure }
+        AuthService {
+            redis_conn,
+            is_insecure,
+        }
     }
 
     pub fn is_logged(&mut self, token: &String) -> bool {

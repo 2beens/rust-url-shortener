@@ -39,10 +39,7 @@ impl LinkHandler {
         match self.redis_conn.get::<String, String>(url_key) {
             Ok(url_record) => {
                 let mut url_record = URLRecord::from_json(url_id, &url_record);
-                debug!(
-                    ">>> found url to redirect to: [{}]",
-                    url_record.url
-                );
+                debug!(">>> found url to redirect to: [{}]", url_record.url);
                 Handlers::handle_redirect(stream, url_record.url.to_string());
 
                 // increase hits count for this link
