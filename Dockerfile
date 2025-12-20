@@ -1,8 +1,4 @@
-# 1 build:
-# docker build -t rus .
-# 2 run:
-# docker run -it --rm --name rus1 -e RUS_REDIS_HOST='0.0.0.0' rus
-
+# Build stage
 FROM rust:1.66 as builder
 
 WORKDIR /rus
@@ -10,11 +6,18 @@ COPY . .
 
 RUN cargo build --release
 
-# our final base
+# Runtime stage
 FROM rust:1.66-slim-buster
 
-# copy the build artifact from the build stage
-COPY --from=builder /rus/target/release/rust-url-shortener .
+# Copy the build artifact from the build stage
+COPY --from=builder /rus/target/release/rust-url-shortener /usr/local/bin/rust-url-shortener
 
-# set the startup command to run your binary
-CMD ["./rust-url-shortener", "-p", "9001"]
+# Create log directory
+RUN mkdir -p /var/log/rust-url-shortener
+
+# Expose port 1990
+EXPOSE 1990
+
+# Set the startup command to run your binary
+# Port and other args can be overridden via CMD or docker run
+CMD ["/usr/local/bin/rust-url-shortener", "-p", "1990"]
