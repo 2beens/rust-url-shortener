@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:1.66 as builder
+FROM rust:1.75 as builder
 
 WORKDIR /rus
 COPY . .
@@ -7,7 +7,13 @@ COPY . .
 RUN cargo build --release
 
 # Runtime stage
-FROM rust:1.66-slim-buster
+FROM debian:bookworm-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy the build artifact from the build stage
 COPY --from=builder /rus/target/release/rust-url-shortener /usr/local/bin/rust-url-shortener
