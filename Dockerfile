@@ -21,9 +21,9 @@ COPY --from=builder /rus/target/release/rust-url-shortener /usr/local/bin/rust-u
 # Create log directory
 RUN mkdir -p /var/log/rust-url-shortener
 
-# Expose port 1990
-EXPOSE 1990
+# Expose port 1993
+EXPOSE 1993
 
 # Set the startup command to run your binary
 # Port and other args can be overridden via CMD or docker run
-CMD ["/usr/local/bin/rust-url-shortener", "-p", "1990"]
+CMD ["/usr/local/bin/rust-url-shortener", "-p", "1993"]
